@@ -19,33 +19,36 @@ export default function BookingsScreen({ onNavigate, onSelectService }) {
       console.warn(err);
       setActiveBookings([
         {
-          id: 'COL95751',
-          serviceId: 'srv_photo',
-          title: 'Elite Photography Studio',
-          price: '₹2,500/hr',
-          location: 'Koramangala, Bangalore',
-          imageUrl: '/assets/images/elite_photography.png',
+          id: 'COL12345',
+          serviceId: 'srv_corp_lunch',
+          title: 'Corporate Lunch (Executive Thali)',
+          price: '₹200',
+          totalAmount: '₹400',
+          location: 'Gurugram, Cyber City',
+          imageUrl: '/assets/images/daily_meals_hr.jpg',
           status: 'Confirmed'
         },
         {
-          id: 'COL95752',
-          serviceId: 'srv_clean',
-          title: 'Premium House Cleaning',
-          price: '₹1,500/hr',
-          location: 'Koramangala, Bangalore',
-          imageUrl: '/assets/images/house_cleaning.png',
+          id: 'COL67890',
+          serviceId: 'srv_ac_service',
+          title: 'AC Service (Deep Jet Clean)',
+          price: '₹800',
+          totalAmount: '₹800',
+          location: 'Sector 62, Noida',
+          imageUrl: '/assets/images/ac_service_hr.jpg',
           status: 'Confirmed'
         }
       ]);
       setPastBookings([
         {
-          id: 'COL95750',
-          serviceId: 'srv_photo',
-          title: 'Elite Photography Studio',
-          price: '₹2,500/hr',
-          location: 'Koramangala, Bangalore',
+          id: 'COL11223',
+          serviceId: 'srv_night_care',
+          title: 'Night Care (Newborn Care)',
+          price: '₹1,350',
+          totalAmount: '₹1,350',
+          location: 'Delhi NCR',
           date: 'Dec 14, 2024',
-          imageUrl: '/assets/images/elite_photography.png',
+          imageUrl: '/assets/images/night_care_hr.jpg',
           rating: 5.0
         }
       ]);
@@ -53,8 +56,7 @@ export default function BookingsScreen({ onNavigate, onSelectService }) {
   };
 
   const handleContact = (b) => {
-    onSelectService({ id: b.serviceId, title: b.title, image: b.imageUrl });
-    onNavigate('serviceDetail');
+    window.open(`https://wa.me/919818191755?text=Hello%20Collably%2C%20regarding%20booking%20${b.id || ''}%20for%20${encodeURIComponent(b.title || '')}`, '_blank');
   };
 
   const handleReschedule = (b) => {

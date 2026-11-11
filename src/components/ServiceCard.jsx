@@ -23,14 +23,14 @@ export default function ServiceCard({
 
   return (
     <div className="service-card" onClick={onTap} style={{ position: 'relative' }}>
-      <div style={{ position: 'relative', width: '100%', height: 120, overflow: 'hidden' }}>
+      <div style={{ position: 'relative', width: '100%', height: 135, overflow: 'hidden' }}>
         <img
-          src={image}
+          src={image || '/assets/images/daily_meals_hr.jpg'}
           alt={title}
           className="service-card-image"
           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
           onError={(e) => {
-            e.target.src = '/assets/images/elite_photography.png';
+            e.target.src = '/assets/images/daily_meals_hr.jpg';
           }}
         />
         {discount && (

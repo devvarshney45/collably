@@ -7,48 +7,42 @@ export default function ServiceDetailScreen({ onNavigate, selectedService, onBac
   const [lightboxImg, setLightboxImg] = useState(null);
 
   useEffect(() => {
-    const srvId = selectedService?.id || 'srv_photo';
+    const srvId = selectedService?.id || selectedService?.serviceId || 'srv_corp_lunch';
     api.services.get(srvId)
       .then((data) => setService(data.service))
       .catch((err) => console.error(err));
   }, [selectedService]);
 
   const s = service || {
-    id: 'srv_photo',
-    title: 'Elite Photography Studio',
-    category: 'Studio',
-    price: '₹2,500/hr',
-    rating: '4.8',
-    reviewsCount: '1250',
-    location: 'Koramangala,\nBangalore',
-    experience: '5+ Years Of\nExperience',
-    image: '/assets/images/elite_photography.png',
-    description: 'Professional photography studio with state-of-the-art equipment and experienced team. Specializing in portraits, weddings, and commercial photography.',
+    id: 'srv_corp_lunch',
+    serviceId: 'srv_corp_lunch',
+    title: 'Corporate Lunch',
+    category: 'Daily Meals',
+    price: '₹200',
+    numericPrice: 200,
+    rating: '4.9',
+    reviewsCount: '340',
+    location: 'Gurugram,\nCyber City',
+    experience: '8 Yrs\nExperience',
+    image: '/assets/images/daily_meals_hr.jpg',
+    description: 'Wholesome corporate lunch catering prepared fresh daily. Healthy multi-cuisine meal trays with prompt delivery to your office.',
     servicesOffered: [
-      'Portrait Photography',
-      'Wedding Photography',
-      'Commercial Shoots',
-      'Product Photography'
+      'Executive Thali',
+      'Diet Meal Trays',
+      'Fresh Fruit Bowl',
+      'Dessert & Beverages'
     ],
     gallery: [
-      '/assets/images/Rectangle 4249.png',
-      '/assets/images/Rectangle 4250.png',
-      '/assets/images/Rectangle 4251.png'
+      '/assets/images/daily_meals_hr.jpg',
+      '/assets/images/cooking.png'
     ],
     reviews: [
       {
         id: 'rev_1',
-        name: 'Priya Sharma',
-        date: '2 days ago',
+        name: 'Vikas Aggarwal',
+        date: 'Yesterday',
         rating: 5,
-        comment: 'Amazing service! The team was professional and the photos turned out perfect.'
-      },
-      {
-        id: 'rev_2',
-        name: 'Rajesh Kumar',
-        date: '1 week ago',
-        rating: 4,
-        comment: 'Excellent studio with great equipment. Highly recommend for professional shoots.'
+        comment: 'Always on time and meals are hot, low on oil, and super tasty.'
       }
     ]
   };

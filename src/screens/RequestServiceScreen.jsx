@@ -16,14 +16,13 @@ export default function RequestServiceScreen({ onNavigate, onBack }) {
     'Home-style Tiffin (Daily Meals)',
     'AC Service (Appliance Repair)',
     'Washing Machine Repair',
+    'Refrigerator Repair',
     'Office Boy Services',
     'Office Cleaning & Sanitization',
     'Pantry Support Services',
     'Day Care (Babysitting)',
     'Night Care (Infant Nanny)',
-    'Elite Photography Studio',
-    'Premium House Cleaning',
-    'Custom / Service Not Listed'
+    'Other / Custom Requirement'
   ];
 
   const handleSubmit = async (e) => {

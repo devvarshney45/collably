@@ -12,7 +12,9 @@ import {
   Share2,
   MessageCircle,
   MapPin,
-  ChevronDown
+  ChevronDown,
+  Tag,
+  ShieldCheck
 } from 'lucide-react';
 import { api } from '../api';
 
@@ -20,7 +22,7 @@ export default function ServiceBookingScreen({ onNavigate, selectedService, onBa
   const [phase, setPhase] = useState(1);
   const [selectedDate, setSelectedDate] = useState('Today');
   const [selectedTime, setSelectedTime] = useState('11:00 AM');
-  const [selectedDuration, setSelectedDuration] = useState('2 Hour Session');
+  const [selectedDuration, setSelectedDuration] = useState('1 Hour Session');
   const [selectedPayment, setSelectedPayment] = useState('UPI');
   const [note, setNote] = useState('');
   const [bookingConfirmed, setBookingConfirmed] = useState(null);
@@ -31,39 +33,68 @@ export default function ServiceBookingScreen({ onNavigate, selectedService, onBa
   const durations = ['1 Hour Session', '2 Hour Session', '4 Hour Session'];
 
   const s = selectedService || {
-    id: 'srv_photo',
-    title: 'Elite Photography Studio',
-    category: 'Studio',
-    price: '₹2,500/hr',
-    image: '/assets/images/elite_photography.png',
-    location: 'Koramangala, Bangalore'
+    id: 'srv_corp_lunch',
+    serviceId: 'srv_corp_lunch',
+    title: 'Corporate Lunch',
+    category: 'Daily Meals',
+    price: '₹200',
+    numericPrice: 200,
+    image: '/assets/images/daily_meals_hr.jpg',
+    location: 'Gurugram, Cyber City'
   };
+
+  // Accurate dynamic price breakdown calculation matching the app
+  const parseNumPrice = (priceStr, numVal) => {
+    if (typeof numVal === 'number' && !isNaN(numVal) && numVal > 0) return numVal;
+    if (!priceStr) return 200;
+    const cleaned = String(priceStr).replace(/[^0-9]/g, '');
+    const val = parseInt(cleaned, 10);
+    return isNaN(val) || val <= 0 ? 200 : val;
+  };
+
+  const unitPrice = parseNumPrice(s.price, s.numericPrice);
+  const hoursMultiplier = selectedDuration.includes('2') ? 2 : (selectedDuration.includes('4') ? 4 : 1);
+  const basePrice = unitPrice * hoursMultiplier;
+  const discountRate = s.discount ? (parseInt(String(s.discount).replace(/[^0-9]/g, ''), 10) || 10) : 10;
+  const discountAmount = Math.round(basePrice * (discountRate / 100));
+  const platformFee = 50;
+  const totalAmount = Math.max(0, basePrice - discountAmount + platformFee);
+  const formattedTotal = `₹${totalAmount.toLocaleString('en-IN')}`;
 
   const handleBookNow = async () => {
     setLoading(true);
     try {
       const data = await api.bookings.create({
-        serviceId: s.id || 'srv_photo',
-        title: s.title || 'Elite Photography Studio',
+        serviceId: s.id || s.serviceId || 'srv_corp_lunch',
+        title: s.title || 'Corporate Lunch',
         date: `${selectedDate}, December 16`,
         time: `${selectedTime} - 1:00 PM`,
         duration: selectedDuration,
         paymentMethod: selectedPayment,
-        note
+        totalAmount: formattedTotal,
+        numericTotal: totalAmount,
+        note,
+        priceBreakdown: {
+          basePrice: `₹${basePrice.toLocaleString('en-IN')}`,
+          discount: `-₹${discountAmount.toLocaleString('en-IN')}`,
+          platformFee: `₹${platformFee}`,
+          total: formattedTotal
+        }
       });
       setBookingConfirmed(data.booking);
       setPhase(2);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
-      console.error(err);
+      console.warn('Booking create notice:', err);
       setBookingConfirmed({
-        id: 'COL95751',
-        title: s.title || 'Elite Photography Studio',
+        id: `COL${Math.floor(10000 + Math.random() * 90000)}`,
+        title: s.title || 'Corporate Lunch',
         date: `${selectedDate}, December 16`,
         time: `${selectedTime} - 1:00 PM`,
         duration: selectedDuration,
-        location: s.location || 'Koramangala, Bangalore',
-        totalAmount: '₹4,550'
+        location: s.location || 'Gurugram, Cyber City',
+        totalAmount: formattedTotal,
+        numericTotal: totalAmount
       });
       setPhase(2);
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -109,7 +140,7 @@ export default function ServiceBookingScreen({ onNavigate, selectedService, onBa
             Booking Confirmed!
           </h2>
           <p style={{ color: '#666666', fontSize: 13, margin: 0 }}>
-            Your service has been successfully booked
+            Your service has been successfully booked with live status tracking
           </p>
         </div>
 
@@ -135,8 +166,8 @@ export default function ServiceBookingScreen({ onNavigate, selectedService, onBa
                 <Calendar size={18} />
               </div>
               <div>
-                <div style={{ fontWeight: 'bold', fontSize: 14, color: '#000000' }}>{bookingConfirmed?.date || 'Today, December 16'}</div>
-                <div style={{ color: '#666666', fontSize: 12 }}>{bookingConfirmed?.time || '11:00 AM - 1:00 PM'}</div>
+                <div style={{ fontWeight: 'bold', fontSize: 14, color: '#000000' }}>{bookingConfirmed?.date || `${selectedDate}, December 16`}</div>
+                <div style={{ color: '#666666', fontSize: 12 }}>{bookingConfirmed?.time || `${selectedTime} - 1:00 PM`}</div>
               </div>
             </div>
 
@@ -146,7 +177,7 @@ export default function ServiceBookingScreen({ onNavigate, selectedService, onBa
               </div>
               <div>
                 <div style={{ fontWeight: 'bold', fontSize: 14, color: '#000000' }}>{bookingConfirmed?.title || s.title}</div>
-                <div style={{ color: '#666666', fontSize: 12 }}>{bookingConfirmed?.location || 'Koramangala, Bangalore'}</div>
+                <div style={{ color: '#666666', fontSize: 12 }}>{bookingConfirmed?.location || s.location || 'Delhi NCR'}</div>
               </div>
             </div>
 
@@ -156,48 +187,88 @@ export default function ServiceBookingScreen({ onNavigate, selectedService, onBa
               </div>
               <div>
                 <div style={{ fontWeight: 'bold', fontSize: 14, color: '#000000' }}>{bookingConfirmed?.duration || selectedDuration}</div>
-                <div style={{ color: '#666666', fontSize: 12 }}>Photography Service</div>
+                <div style={{ color: '#666666', fontSize: 12 }}>{s.category || 'Professional Service'}</div>
               </div>
             </div>
           </div>
 
-          <div style={{ height: 1, backgroundColor: '#E2E8F0', margin: '20px 0' }} />
+          {/* Breakdown in Receipt */}
+          <div style={{
+            backgroundColor: '#F8FAFC',
+            borderRadius: 14,
+            padding: '14px 16px',
+            marginBottom: 20
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#64748B', marginBottom: 6 }}>
+              <span>Base price ({selectedDuration})</span>
+              <span style={{ fontWeight: 600, color: '#0F172A' }}>₹{basePrice.toLocaleString('en-IN')}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#64748B', marginBottom: 6 }}>
+              <span>Discount ({discountRate}% off)</span>
+              <span style={{ fontWeight: 700, color: '#16A34A' }}>-₹{discountAmount.toLocaleString('en-IN')}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#64748B', marginBottom: 8 }}>
+              <span>Platform fee</span>
+              <span style={{ fontWeight: 600, color: '#0F172A' }}>₹{platformFee}</span>
+            </div>
+            <div style={{ height: 1, backgroundColor: '#E2E8F0', margin: '8px 0' }} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontWeight: 'bold', fontSize: 15, color: '#000000' }}>Total Paid</span>
+              <span style={{ fontWeight: 'bold', fontSize: 20, color: 'var(--primary)' }}>
+                {bookingConfirmed?.totalAmount || formattedTotal}
+              </span>
+            </div>
+          </div>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontWeight: 'bold', fontSize: 15, color: '#000000' }}>Total Paid</span>
-            <span style={{ fontWeight: 'bold', fontSize: 20, color: 'var(--primary)' }}>
-              {bookingConfirmed?.totalAmount || '₹4,550'}
-            </span>
+          {/* Primary Action Button */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <button
+              onClick={() => window.open(`https://wa.me/919818191755?text=Hello%20Collably%2C%20regarding%20booking%20${bookingConfirmed?.id || 'COL12345'}%20for%20${encodeURIComponent(s.title)}`, '_blank')}
+              style={{
+                width: '100%',
+                height: 48,
+                borderRadius: 12,
+                backgroundColor: '#25D366',
+                color: 'white',
+                border: 'none',
+                fontWeight: 'bold',
+                fontSize: 14,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                boxShadow: '0 4px 12px rgba(37, 211, 102, 0.25)'
+              }}
+            >
+              <MessageCircle size={18} />
+              <span>Chat with Provider on WhatsApp</span>
+            </button>
+
+            <button
+              onClick={() => onNavigate('dashboard_bookings')}
+              className="app-btn"
+              style={{ width: '100%', height: 48, borderRadius: 12, fontSize: 14, fontWeight: 'bold' }}
+            >
+              View in My Bookings
+            </button>
+
+            <button
+              onClick={() => onNavigate('dashboard_home')}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#64748B',
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: 'pointer',
+                padding: '8px'
+              }}
+            >
+              Back to Home
+            </button>
           </div>
         </div>
-
-        {/* Action Buttons */}
-        <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
-          <button
-            onClick={() => alert('Booking receipt downloaded!')}
-            className="app-btn-outline"
-            style={{ flex: 1, height: 46, borderRadius: 12, fontSize: 13, fontWeight: 'bold' }}
-          >
-            <Download size={16} />
-            <span>Download</span>
-          </button>
-          <button
-            onClick={() => alert('Booking shared!')}
-            className="app-btn-outline"
-            style={{ flex: 1, height: 46, borderRadius: 12, fontSize: 13, fontWeight: 'bold' }}
-          >
-            <Share2 size={16} />
-            <span>Share</span>
-          </button>
-        </div>
-
-        <button
-          onClick={() => onNavigate('dashboard_bookings')}
-          className="app-btn"
-          style={{ width: '100%', height: 48, borderRadius: 12, fontSize: 15, fontWeight: 'bold' }}
-        >
-          View in My Bookings
-        </button>
       </div>
     );
   }
@@ -242,6 +313,36 @@ export default function ServiceBookingScreen({ onNavigate, selectedService, onBa
         padding: '28px 32px',
         boxShadow: 'var(--shadow-sm)'
       }}>
+        {/* Service Summary Banner */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 16,
+          padding: '14px 18px',
+          borderRadius: 16,
+          backgroundColor: '#FFF7ED',
+          border: '1.5px solid #FFEDD5',
+          marginBottom: 26
+        }}>
+          <img
+            src={s.image || '/assets/images/daily_meals_hr.jpg'}
+            alt={s.title}
+            style={{ width: 60, height: 60, borderRadius: 12, objectFit: 'cover' }}
+            onError={(e) => { e.target.src = '/assets/images/daily_meals_hr.jpg'; }}
+          />
+          <div style={{ flex: 1 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase' }}>
+              {s.category || 'Professional Service'}
+            </span>
+            <div style={{ fontSize: 16, fontWeight: 800, color: '#0F172A', marginTop: 2 }}>
+              {s.title}
+            </div>
+            <div style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>
+              {s.location || 'Delhi NCR'} • {s.price}
+            </div>
+          </div>
+        </div>
+
         {/* 1. Select Date */}
         <div style={{ marginBottom: 24 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
@@ -261,8 +362,8 @@ export default function ServiceBookingScreen({ onNavigate, selectedService, onBa
                     padding: '10px 18px',
                     borderRadius: 12,
                     border: active ? '1.5px solid var(--primary)' : '1px solid #E2E8F0',
-                    backgroundColor: active ? 'rgba(255, 107, 53, 0.1)' : '#FFFFFF',
-                    color: active ? 'var(--primary)' : '#334155',
+                    backgroundColor: active ? 'var(--primary)' : '#FFFFFF',
+                    color: active ? '#FFFFFF' : '#334155',
                     fontWeight: active ? 'bold' : '500',
                     fontSize: 13,
                     cursor: 'pointer',
@@ -295,8 +396,8 @@ export default function ServiceBookingScreen({ onNavigate, selectedService, onBa
                     padding: '10px 12px',
                     borderRadius: 12,
                     border: active ? '1.5px solid var(--primary)' : '1px solid #E2E8F0',
-                    backgroundColor: active ? 'rgba(255, 107, 53, 0.1)' : '#FFFFFF',
-                    color: active ? 'var(--primary)' : '#334155',
+                    backgroundColor: active ? 'var(--primary)' : '#FFFFFF',
+                    color: active ? '#FFFFFF' : '#334155',
                     fontWeight: active ? 'bold' : '500',
                     fontSize: 13,
                     cursor: 'pointer',
@@ -314,7 +415,7 @@ export default function ServiceBookingScreen({ onNavigate, selectedService, onBa
         {/* 3. Session Duration */}
         <div style={{ marginBottom: 24 }}>
           <h3 style={{ fontSize: 15, fontWeight: 'bold', color: '#000000', marginBottom: 10 }}>
-            Price Breakdown / Duration
+            Select Duration
           </h3>
 
           <div className="app-textfield-wrapper">
@@ -366,54 +467,144 @@ export default function ServiceBookingScreen({ onNavigate, selectedService, onBa
           </div>
         </div>
 
-        {/* 5. Payment Method & Total */}
-        <div style={{
-          backgroundColor: '#F8FAFC',
-          borderRadius: 16,
-          padding: '20px',
-          border: '1px solid #E2E8F0',
-          marginBottom: 24
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <span style={{ fontWeight: 'bold', fontSize: 15, color: '#000000' }}>Total Amount</span>
-            <span style={{ fontWeight: 'bold', fontSize: 22, color: 'var(--primary)' }}>₹4,550</span>
+        {/* 5. Detailed Price Breakdown (Exact Flutter Design) */}
+        <div style={{ marginBottom: 28 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+            <Tag size={18} color="var(--primary)" />
+            <h3 style={{ fontSize: 15, fontWeight: 'bold', color: '#000000', margin: 0 }}>
+              Price Breakdown
+            </h3>
           </div>
 
-          <div style={{ display: 'flex', gap: 10 }}>
-            {['UPI', 'Card', 'Wallet'].map((p) => {
-              const active = selectedPayment === p;
+          <div style={{
+            backgroundColor: '#FFFFFF',
+            borderRadius: 16,
+            border: '1.5px solid #E2E8F0',
+            padding: '18px 20px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0' }}>
+              <span style={{ fontSize: 14, color: '#475569', fontWeight: 500 }}>
+                Base price ({selectedDuration})
+              </span>
+              <span style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>
+                ₹{basePrice.toLocaleString('en-IN')}
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0' }}>
+              <span style={{ fontSize: 14, color: '#475569', fontWeight: 500 }}>
+                Discount ({discountRate}% off)
+              </span>
+              <span style={{ fontSize: 14, fontWeight: 700, color: '#16A34A' }}>
+                -₹{discountAmount.toLocaleString('en-IN')}
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0' }}>
+              <span style={{ fontSize: 14, color: '#475569', fontWeight: 500 }}>
+                Platform fee
+              </span>
+              <span style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>
+                ₹{platformFee}
+              </span>
+            </div>
+
+            <div style={{ height: 1, backgroundColor: '#E2E8F0', margin: '14px 0' }} />
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0' }}>
+              <span style={{ fontSize: 16, fontWeight: 800, color: '#0F172A' }}>
+                Total Amount
+              </span>
+              <span style={{ fontSize: 20, fontWeight: 800, color: 'var(--primary)' }}>
+                {formattedTotal}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* 6. Payment Method */}
+        <div style={{ marginBottom: 28 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 'bold', color: '#000000', marginBottom: 12 }}>
+            Payment Method
+          </h3>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {[
+              { id: 'UPI', title: 'UPI', subtitle: 'Pay with UPI apps (GPay, PhonePe, Paytm)', icon: Smartphone },
+              { id: 'Card', title: 'Credit / Debit Card', subtitle: 'Visa, Mastercard, RuPay', icon: CreditCard },
+              { id: 'Wallet', title: 'Collably Wallet', subtitle: 'Pay from instant wallet balance', icon: Wallet }
+            ].map((pm) => {
+              const active = selectedPayment === pm.id;
+              const IconComp = pm.icon;
               return (
-                <button
-                  key={p}
-                  type="button"
-                  onClick={() => setSelectedPayment(p)}
+                <div
+                  key={pm.id}
+                  onClick={() => setSelectedPayment(pm.id)}
                   style={{
-                    flex: 1,
-                    padding: '8px 12px',
-                    borderRadius: 10,
-                    border: active ? '1.5px solid var(--primary)' : '1px solid #CBD5E1',
-                    backgroundColor: active ? 'var(--primary-light)' : '#FFFFFF',
-                    color: active ? 'var(--primary)' : '#475569',
-                    fontWeight: active ? 'bold' : '600',
-                    fontSize: 13,
-                    cursor: 'pointer'
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 14,
+                    padding: '14px 18px',
+                    borderRadius: 14,
+                    border: active ? '2px solid var(--primary)' : '1px solid #E2E8F0',
+                    backgroundColor: active ? 'var(--primary)' : '#FFFFFF',
+                    color: active ? '#FFFFFF' : '#0F172A',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
                   }}
                 >
-                  {p}
-                </button>
+                  <div style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 10,
+                    backgroundColor: active ? 'rgba(255,255,255,0.2)' : '#F1F5F9',
+                    color: active ? '#FFFFFF' : 'var(--primary)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0
+                  }}>
+                    <IconComp size={20} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 800, fontSize: 14, color: active ? '#FFFFFF' : '#0F172A' }}>
+                      {pm.title}
+                    </div>
+                    <div style={{ fontSize: 12, color: active ? 'rgba(255,255,255,0.85)' : '#64748B', marginTop: 2 }}>
+                      {pm.subtitle}
+                    </div>
+                  </div>
+                  <div style={{
+                    width: 20,
+                    height: 20,
+                    borderRadius: '50%',
+                    border: active ? '2px solid #FFFFFF' : '2px solid #CBD5E1',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    {active && <div style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#FFFFFF' }} />}
+                  </div>
+                </div>
               );
             })}
           </div>
         </div>
+
+        {/* Agreement notice */}
+        <p style={{ textAlign: 'center', fontSize: 12, color: '#64748B', marginBottom: 20 }}>
+          By confirming this booking, you agree to Collably Terms of Service & Cancellation Policy.
+        </p>
 
         {/* Submit */}
         <button
           className="app-btn"
           onClick={handleBookNow}
           disabled={loading}
-          style={{ height: 48, borderRadius: 12, fontSize: 15 }}
+          style={{ width: '100%', height: 50, borderRadius: 14, fontSize: 16, fontWeight: 800 }}
         >
-          {loading ? 'Securing Booking...' : 'Book Now • ₹4,550'}
+          {loading ? 'Securing Booking...' : `Book Now • ${formattedTotal}`}
         </button>
       </div>
     </div>

@@ -105,10 +105,10 @@ export default function QuickBookingScreen({ onNavigate, onSelectService, onBack
           overflowX: 'auto',
           paddingBottom: 8
         }}>
-          <CategoryItem title="Studio" iconAsset="/assets/images/studios.png" onTap={() => onNavigate('search', { category: 'Studio' })} />
-          <CategoryItem title="House cleaning" iconAsset="/assets/images/house_cleaning.png" onTap={() => onNavigate('search', { category: 'House cleaning' })} />
-          <CategoryItem title="Car Wash" iconAsset="/assets/images/car_wash.png" onTap={() => onNavigate('search', { category: 'Car Wash' })} />
-          <CategoryItem title="Day Care" iconAsset="/assets/images/day_care.png" onTap={() => onNavigate('search', { category: 'Day Care' })} />
+          <CategoryItem title="Daily Meals" iconAsset="/assets/images/daily_meals_hr.jpg" onTap={() => onNavigate('search', { category: 'Daily Meals' })} />
+          <CategoryItem title="Appliance Repair" iconAsset="/assets/images/appliance_repair_hr.jpg" onTap={() => onNavigate('search', { category: 'Appliance Repair' })} />
+          <CategoryItem title="Office Support" iconAsset="/assets/images/office_support_hr.jpg" onTap={() => onNavigate('search', { category: 'Office Support' })} />
+          <CategoryItem title="Babysitting" iconAsset="/assets/images/babysitting_hr.jpg" onTap={() => onNavigate('search', { category: 'Babysitting' })} />
         </div>
       </div>
 

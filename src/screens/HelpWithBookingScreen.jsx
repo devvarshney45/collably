@@ -14,17 +14,17 @@ export default function HelpWithBookingScreen({ onNavigate, onBack }) {
   const bookings = [
     {
       id: 'BK-7829',
-      title: 'Elite Photography Studio',
-      time: 'Today, 2:00 PM',
+      title: 'Corporate Lunch (Daily Meals)',
+      time: 'Today, 1:00 PM',
       status: 'Confirmed',
-      image: '/assets/images/elite_photography.png'
+      image: '/assets/images/daily_meals_hr.jpg'
     },
     {
       id: 'BK-7830',
-      title: 'Cooking & Private Chef',
+      title: 'AC Service (Jet Clean)',
       time: 'Tomorrow, 10:00 AM',
       status: 'Confirmed',
-      image: '/assets/images/cooking.png'
+      image: '/assets/images/ac_service_hr.jpg'
     }
   ];
 

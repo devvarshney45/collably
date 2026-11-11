@@ -9,7 +9,13 @@ import {
   MapPin,
   Sparkles,
   ChevronRight,
-  Tag
+  Tag,
+  UtensilsCrossed,
+  Wrench,
+  Building2,
+  Baby,
+  Camera,
+  Car
 } from 'lucide-react';
 import { api } from '../api';
 
@@ -56,14 +62,14 @@ export default function HomeScreen({ onNavigate, onSelectService }) {
     ? services
     : services.filter(s => (s.category || '').toLowerCase() === selectedFilter.toLowerCase());
 
-  // 4 Primary categories matching the mobile app
+  // 4 Primary categories matching the mobile app with High-Definition 600x600 assets
   const appCategories = [
     {
       id: 'daily_meals',
       title: 'Daily Meals',
-      image: '/assets/images/daily_meals.png',
-      bgColor: '#FFFFF6E1',
-      borderColor: 'rgba(245, 158, 11, 0.2)',
+      image: '/assets/images/daily_meals_hr.jpg',
+      bgColor: '#FFFBEB',
+      borderColor: '#FDE68A',
       badge: 'Best Food',
       category: 'Daily Meals',
       tagColor: '#B45309'
@@ -71,9 +77,9 @@ export default function HomeScreen({ onNavigate, onSelectService }) {
     {
       id: 'appliance_repair',
       title: 'Appliance Repair',
-      image: '/assets/images/appliance_repair.png',
-      bgColor: '#FFFFEEE8',
-      borderColor: 'rgba(255, 107, 53, 0.2)',
+      image: '/assets/images/appliance_repair_hr.jpg',
+      bgColor: '#FFF7ED',
+      borderColor: '#FFEDD5',
       badge: 'Certified Techs',
       category: 'Appliance Repair',
       tagColor: '#C2410C'
@@ -81,9 +87,9 @@ export default function HomeScreen({ onNavigate, onSelectService }) {
     {
       id: 'office_support',
       title: 'Office Support',
-      image: '/assets/images/office_support.png',
-      bgColor: '#FFE8F4FF',
-      borderColor: 'rgba(59, 130, 246, 0.2)',
+      image: '/assets/images/office_support_hr.jpg',
+      bgColor: '#EFF6FF',
+      borderColor: '#DBEAFE',
       badge: 'Corporate',
       category: 'Office Support',
       tagColor: '#1D4ED8'
@@ -91,9 +97,9 @@ export default function HomeScreen({ onNavigate, onSelectService }) {
     {
       id: 'babysitting',
       title: 'Babysitting',
-      image: '/assets/images/babysitting.png',
-      bgColor: '#FFFEE8E8',
-      borderColor: 'rgba(239, 68, 68, 0.2)',
+      image: '/assets/images/babysitting_hr.jpg',
+      bgColor: '#FEF2F2',
+      borderColor: '#FEE2E2',
       badge: 'Trained Care',
       category: 'Babysitting',
       tagColor: '#B91C1C'
@@ -272,81 +278,93 @@ export default function HomeScreen({ onNavigate, onSelectService }) {
                 borderRadius: 18,
                 backgroundColor: cat.bgColor,
                 border: `1.5px solid ${cat.borderColor}`,
-                padding: '16px',
-                position: 'relative',
                 cursor: 'pointer',
                 overflow: 'hidden',
-                height: 180,
+                height: 195,
                 display: 'flex',
                 flexDirection: 'column',
-                justifyContent: 'space-between',
-                transition: 'all 0.2s ease',
-                boxShadow: '0 2px 10px rgba(0,0,0,0.02)'
+                transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+                boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
+                position: 'relative'
               }}
               onMouseOver={(e) => {
-                e.currentTarget.style.transform = 'translateY(-3px)';
-                e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.06)';
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.boxShadow = '0 10px 24px rgba(0,0,0,0.08)';
               }}
               onMouseOut={(e) => {
                 e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 2px 10px rgba(0,0,0,0.02)';
+                e.currentTarget.style.boxShadow = '0 2px 10px rgba(0,0,0,0.03)';
               }}
             >
-              <div style={{ zIndex: 1 }}>
-                <span style={{
-                  fontSize: 10,
-                  fontWeight: 800,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px',
-                  color: cat.tagColor,
-                  backgroundColor: 'rgba(255,255,255,0.7)',
-                  padding: '2px 8px',
-                  borderRadius: 10,
-                  display: 'inline-block',
-                  marginBottom: 6
-                }}>
-                  {cat.badge}
-                </span>
-                <div style={{ fontWeight: 800, fontSize: 16, color: '#0F172A', lineHeight: 1.2 }}>
-                  {cat.title}
-                </div>
-              </div>
-
+              {/* Crisp Retina Image Banner */}
               <div style={{
-                position: 'absolute',
-                right: -10,
-                bottom: -10,
-                width: 140,
-                height: 140,
-                display: 'flex',
-                alignItems: 'flex-end',
-                justifyContent: 'flex-end'
+                position: 'relative',
+                height: 115,
+                width: '100%',
+                overflow: 'hidden',
+                backgroundColor: 'rgba(0,0,0,0.03)'
               }}>
                 <img
                   src={cat.image}
                   alt={cat.title}
                   style={{
-                    maxHeight: '100%',
-                    maxWidth: '100%',
-                    objectFit: 'contain'
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    display: 'block',
+                    transition: 'transform 0.4s ease'
                   }}
-                  onError={(e) => {
-                    e.target.style.display = 'none';
-                  }}
+                  onMouseOver={(e) => { e.currentTarget.style.transform = 'scale(1.08)'; }}
+                  onMouseOut={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
                 />
+                <span style={{
+                  position: 'absolute',
+                  top: 10,
+                  left: 10,
+                  fontSize: 10,
+                  fontWeight: 800,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  color: cat.tagColor,
+                  backgroundColor: 'rgba(255,255,255,0.92)',
+                  backdropFilter: 'blur(6px)',
+                  padding: '3px 8px',
+                  borderRadius: 6,
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.1)'
+                }}>
+                  {cat.badge}
+                </span>
               </div>
 
+              {/* Card Footer with Title and Explore link */}
               <div style={{
-                zIndex: 1,
-                fontSize: 12,
-                fontWeight: 700,
-                color: 'var(--primary)',
+                padding: '12px 14px',
                 display: 'flex',
                 alignItems: 'center',
-                gap: 4
+                justifyContent: 'space-between',
+                flex: 1,
+                backgroundColor: cat.bgColor
               }}>
-                <span>Explore</span>
-                <ArrowRight size={13} />
+                <div style={{
+                  fontWeight: 800,
+                  fontSize: 15,
+                  color: '#0F172A',
+                  lineHeight: 1.2
+                }}>
+                  {cat.title}
+                </div>
+                <div style={{
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: 'var(--primary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  flexShrink: 0
+                }}>
+                  <span>Explore</span>
+                  <ArrowRight size={13} />
+                </div>
               </div>
             </div>
           ))}
@@ -360,7 +378,8 @@ export default function HomeScreen({ onNavigate, onSelectService }) {
               border: '1.5px dashed #CBD5E1',
               padding: '16px',
               cursor: 'pointer',
-              height: 180,
+              height: 195,
+              boxSizing: 'border-box',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
@@ -370,11 +389,13 @@ export default function HomeScreen({ onNavigate, onSelectService }) {
             }}
             onMouseOver={(e) => {
               e.currentTarget.style.borderColor = 'var(--primary)';
-              e.currentTarget.style.transform = 'translateY(-3px)';
+              e.currentTarget.style.transform = 'translateY(-4px)';
+              e.currentTarget.style.boxShadow = '0 10px 24px rgba(255, 107, 53, 0.12)';
             }}
             onMouseOut={(e) => {
               e.currentTarget.style.borderColor = '#CBD5E1';
               e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = 'none';
             }}
           >
             <div style={{
@@ -385,21 +406,24 @@ export default function HomeScreen({ onNavigate, onSelectService }) {
               color: 'var(--primary)',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center'
+              justifyContent: 'center',
+              boxShadow: '0 4px 12px rgba(255, 107, 53, 0.15)'
             }}>
               <ArrowRight size={24} />
             </div>
-            <span style={{ fontWeight: 800, fontSize: 15, color: '#1E293B' }}>
-              See All
-            </span>
-            <span style={{ fontSize: 11, color: '#94A3B8', marginTop: -6 }}>
-              View all 20+ services
-            </span>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontWeight: 800, fontSize: 15, color: '#1E293B', marginBottom: 2 }}>
+                See All
+              </div>
+              <span style={{ fontSize: 11, color: '#94A3B8' }}>
+                View all 20+ services
+              </span>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* 4. Explore Categories (Circular Pills Matching App) */}
+      {/* 4. Explore Categories (High-Definition Crisp Vector Pills) */}
       <div style={{ marginBottom: 36 }}>
         <h2 style={{ fontSize: 20, fontWeight: 800, color: '#0F172A', marginBottom: 16 }}>
           Explore Categories
@@ -416,63 +440,64 @@ export default function HomeScreen({ onNavigate, onSelectService }) {
           boxShadow: '0 2px 10px rgba(0,0,0,0.02)'
         }}>
           {[
-            { title: 'Daily Meals', icon: '/assets/icons/daily_meals.png', category: 'Daily Meals' },
-            { title: 'Appliance Repair', icon: '/assets/icons/appliance_repair.png', category: 'Appliance Repair' },
-            { title: 'Office Support', icon: '/assets/icons/office_support.png', category: 'Office Support' },
-            { title: 'Babysitting', icon: '/assets/icons/babysitting.png', category: 'Babysitting' },
-            { title: 'Studio', icon: '/assets/icons/studio.png', category: 'Studio' },
-            { title: 'House cleaning', icon: '/assets/icons/house_cleaning.png', category: 'House cleaning' }
-          ].map((cat) => (
-            <div
-              key={cat.title}
-              onClick={() => {
-                setSelectedFilter(cat.category);
-              }}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                cursor: 'pointer',
-                padding: '8px 4px',
-                borderRadius: 14,
-                backgroundColor: selectedFilter === cat.category ? 'rgba(255, 107, 53, 0.08)' : 'transparent',
-                transition: 'all 0.15s ease'
-              }}
-              onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; }}
-              onMouseOut={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}
-            >
-              <div style={{
-                width: 56,
-                height: 56,
-                borderRadius: '50%',
-                backgroundColor: '#FFFFFF',
-                border: selectedFilter === cat.category ? '2px solid var(--primary)' : '1px solid #E2E8F0',
-                boxShadow: '0 4px 10px rgba(0,0,0,0.04)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: 8,
-                overflow: 'hidden'
-              }}>
-                <img
-                  src={cat.icon}
-                  alt={cat.title}
-                  style={{ width: 34, height: 34, objectFit: 'contain' }}
-                  onError={(e) => {
-                    e.target.src = '/assets/icons/studio.png';
-                  }}
-                />
+            { title: 'Daily Meals', icon: UtensilsCrossed, category: 'Daily Meals' },
+            { title: 'Appliance Repair', icon: Wrench, category: 'Appliance Repair' },
+            { title: 'Office Support', icon: Building2, category: 'Office Support' },
+            { title: 'Babysitting', icon: Baby, category: 'Babysitting' }
+          ].map((cat) => {
+            const IconComp = cat.icon;
+            const isSelected = selectedFilter.toLowerCase() === cat.category.toLowerCase();
+            return (
+              <div
+                key={cat.title}
+                onClick={() => {
+                  setSelectedFilter(isSelected ? 'All' : cat.category);
+                }}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  cursor: 'pointer',
+                  padding: '8px 4px',
+                  borderRadius: 14,
+                  backgroundColor: isSelected ? 'rgba(255, 107, 53, 0.08)' : 'transparent',
+                  transition: 'all 0.15s ease'
+                }}
+                onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                onMouseOut={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}
+              >
+                <div style={{
+                  width: 58,
+                  height: 58,
+                  borderRadius: '50%',
+                  backgroundColor: isSelected ? 'var(--primary)' : '#FFF7ED',
+                  border: isSelected ? '2px solid var(--primary)' : '1.5px solid #FFEDD5',
+                  boxShadow: isSelected
+                    ? '0 6px 16px rgba(255, 107, 53, 0.3)'
+                    : '0 2px 8px rgba(255, 107, 53, 0.08)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: 8,
+                  transition: 'all 0.2s ease'
+                }}>
+                  <IconComp
+                    size={24}
+                    color={isSelected ? '#FFFFFF' : 'var(--primary)'}
+                    strokeWidth={2.2}
+                  />
+                </div>
+                <span style={{
+                  fontSize: 12,
+                  fontWeight: isSelected ? 800 : 600,
+                  color: isSelected ? 'var(--primary)' : '#1E293B',
+                  textAlign: 'center'
+                }}>
+                  {cat.title}
+                </span>
               </div>
-              <span style={{
-                fontSize: 12,
-                fontWeight: selectedFilter === cat.category ? 800 : 600,
-                color: selectedFilter === cat.category ? 'var(--primary)' : '#1E293B',
-                textAlign: 'center'
-              }}>
-                {cat.title}
-              </span>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -497,7 +522,7 @@ export default function HomeScreen({ onNavigate, onSelectService }) {
 
           {/* Category Filter Pills */}
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {['All', 'Daily Meals', 'Appliance Repair', 'Office Support', 'Babysitting', 'Studio'].map((f) => (
+            {['All', 'Daily Meals', 'Appliance Repair', 'Office Support', 'Babysitting'].map((f) => (
               <button
                 key={f}
                 onClick={() => setSelectedFilter(f)}
@@ -550,12 +575,21 @@ export default function HomeScreen({ onNavigate, onSelectService }) {
               }}
             >
               {/* Card Image Banner */}
-              <div style={{ height: 140, backgroundColor: '#F8FAFC', position: 'relative', overflow: 'hidden' }}>
+              <div style={{ height: 145, backgroundColor: '#F8FAFC', position: 'relative', overflow: 'hidden' }}>
                 <img
-                  src={srv.image}
+                  src={srv.image || '/assets/images/daily_meals_hr.jpg'}
                   alt={srv.title}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  onError={(e) => { e.target.src = '/assets/images/elite_photography.png'; }}
+                  loading="lazy"
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    display: 'block',
+                    transition: 'transform 0.35s ease'
+                  }}
+                  onMouseOver={(e) => { e.currentTarget.style.transform = 'scale(1.06)'; }}
+                  onMouseOut={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+                  onError={(e) => { e.target.src = '/assets/images/daily_meals_hr.jpg'; }}
                 />
                 {srv.discount && (
                   <span style={{

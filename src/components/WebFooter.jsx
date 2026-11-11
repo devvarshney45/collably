@@ -12,7 +12,7 @@ export default function WebFooter({ onNavigate }) {
               <img src="/assets/svgs/logo_app_name.svg" alt="Collably" style={{ height: 38, marginBottom: 12 }} />
             </div>
             <p className="web-footer-desc">
-              Collably connects you with top-rated local professionals for photography, video editing, culinary chefs, day care, car wash, and custom home services instantly.
+              Collably connects you with top-rated verified professionals for daily meals, appliance repair, corporate office support, and certified babysitting services instantly.
             </p>
             <div className="web-footer-badges">
               <span className="web-footer-badge">
@@ -28,11 +28,10 @@ export default function WebFooter({ onNavigate }) {
           <div className="web-footer-col">
             <h4 className="web-footer-heading">Services</h4>
             <ul className="web-footer-links">
-              <li><button onClick={() => onNavigate('search', { category: 'Studio' })}>Studio & Photography</button></li>
-              <li><button onClick={() => onNavigate('search', { category: 'Cooking' })}>Gourmet Cooking & Chefs</button></li>
-              <li><button onClick={() => onNavigate('search', { category: 'Video Editing' })}>Video Editing & Post-Production</button></li>
-              <li><button onClick={() => onNavigate('search', { category: 'Day Care' })}>Day Care & Childcare</button></li>
-              <li><button onClick={() => onNavigate('search', { category: 'Car Wash' })}>Doorstep Car Wash</button></li>
+              <li><button onClick={() => onNavigate('search', { category: 'Daily Meals' })}>Daily Meals & Tiffin</button></li>
+              <li><button onClick={() => onNavigate('search', { category: 'Appliance Repair' })}>Appliance Repair</button></li>
+              <li><button onClick={() => onNavigate('search', { category: 'Office Support' })}>Office Support</button></li>
+              <li><button onClick={() => onNavigate('search', { category: 'Babysitting' })}>Babysitting & Nanny</button></li>
               <li><button onClick={() => onNavigate('requestService')}>Request Custom Service</button></li>
             </ul>
           </div>
@@ -58,7 +57,7 @@ export default function WebFooter({ onNavigate }) {
             </p>
             <div className="web-footer-contact-item">
               <Phone size={14} color="var(--primary)" />
-              <span>+91 98888 12345 / +1 2620 0323 7631</span>
+              <span>+91 9818191755 (WhatsApp Support)</span>
             </div>
             <div className="web-footer-contact-item">
               <Mail size={14} color="var(--primary)" />

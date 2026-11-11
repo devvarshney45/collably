@@ -1,5 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Search, X } from 'lucide-react';
+import {
+  ArrowLeft,
+  Search,
+  X,
+  UtensilsCrossed,
+  Wrench,
+  Building2,
+  Baby,
+  Camera,
+  Sparkles
+} from 'lucide-react';
 import ServiceCard from '../components/ServiceCard';
 import CategoryItem from '../components/CategoryItem';
 import { api } from '../api';
@@ -39,12 +49,10 @@ export default function SearchScreen({ onNavigate, onSelectService, onBack, init
   };
 
   const categories = [
-    { title: 'Daily Meals', icon: '/assets/icons/daily_meals.png' },
-    { title: 'Appliance Repair', icon: '/assets/icons/appliance_repair.png' },
-    { title: 'Office Support', icon: '/assets/icons/office_support.png' },
-    { title: 'Babysitting', icon: '/assets/icons/babysitting.png' },
-    { title: 'Studio', icon: '/assets/icons/studio.png' },
-    { title: 'House cleaning', icon: '/assets/icons/house_cleaning.png' }
+    { title: 'Daily Meals', icon: UtensilsCrossed },
+    { title: 'Appliance Repair', icon: Wrench },
+    { title: 'Office Support', icon: Building2 },
+    { title: 'Babysitting', icon: Baby }
   ];
 
   return (
@@ -165,12 +173,7 @@ export default function SearchScreen({ onNavigate, onSelectService, onBack, init
                   transition: 'all 0.15s'
                 }}
               >
-                <img
-                  src={c.icon}
-                  alt={c.title}
-                  style={{ width: 22, height: 22, objectFit: 'contain' }}
-                  onError={(e) => { e.target.style.display = 'none'; }}
-                />
+                {c.icon && <c.icon size={18} color={active ? '#FFFFFF' : 'var(--primary)'} strokeWidth={2.2} />}
                 <span>{c.title}</span>
               </div>
             );

@@ -27,141 +27,111 @@ const fallbackStore = {
     { id: "addr_5", title: "Thornridge Cir.", subtitle: "1901 Thornridge Cir. Shiloh, Hawaii 81063", isDefault: false }
   ],
   categories: [
-    { id: "cat_studio", title: "Studio", icon: "/assets/icons/studio.png", color: "#FFFFEEE8" },
-    { id: "cat_cooking", title: "Cooking", icon: "/assets/images/cooking.png", color: "#FFFFF6E1" },
-    { id: "cat_video", title: "Video Editing", icon: "/assets/images/video_editing.png", color: "#FFFEE8E8" },
-    { id: "cat_daycare", title: "Day Care", icon: "/assets/icons/day_care.png", color: "#FFE8F4FF" },
-    { id: "cat_carwash", title: "Car Wash", icon: "/assets/icons/car_wash.png", color: "#FFF1E8FF" },
-    { id: "cat_cleaning", title: "House cleaning", icon: "/assets/icons/house_cleaning.png", color: "#E8F8EF" }
+    { id: "cat_meals", title: "Daily Meals", icon: "/assets/images/daily_meals_hr.jpg", color: "#FFFBEB" },
+    { id: "cat_appliance", title: "Appliance Repair", icon: "/assets/images/appliance_repair_hr.jpg", color: "#FFF7ED" },
+    { id: "cat_office", title: "Office Support", icon: "/assets/images/office_support_hr.jpg", color: "#EFF6FF" },
+    { id: "cat_babysitting", title: "Babysitting", icon: "/assets/images/babysitting_hr.jpg", color: "#FEF2F2" }
   ],
   services: [
     {
-      id: "srv_photo",
-      title: "Elite Photography Studio",
-      category: "Studio",
-      price: "₹2,500/hr",
-      numericPrice: 2500,
-      rating: "4.8",
-      reviewsCount: "124",
-      distance: "2.3 km away",
-      location: "Koramangala, Bangalore",
-      experience: "5+ Years Of Experience",
-      image: "/assets/images/elite_photography.png",
-      description: "Professional photography studio with state-of-the-art equipment and experienced team. Specializing in portraits, weddings, and commercial photography.",
-      servicesOffered: ["Portrait Photography", "Wedding Photography", "Commercial Shoots", "Product Photography"],
-      gallery: [
-        "/assets/images/Rectangle 4249.png",
-        "/assets/images/Rectangle 4250.png",
-        "/assets/images/Rectangle 4251.png"
-      ],
-      reviews: [
-        { id: "rev_1", name: "Priya Sharma", date: "2 days ago", rating: 5, comment: "Amazing service! The team was professional and the photos turned out perfect." },
-        { id: "rev_2", name: "Rajesh Kumar", date: "1 week ago", rating: 4, comment: "Excellent studio with great equipment. Highly recommend for professional shoots." }
-      ]
-    },
-    {
-      id: "srv_clean",
-      title: "Premium House Cleaning",
-      category: "House cleaning",
-      price: "₹1,500/hr",
-      numericPrice: 1500,
+      id: "srv_corp_lunch",
+      serviceId: "srv_corp_lunch",
+      title: "Corporate Lunch",
+      category: "Daily Meals",
+      price: "₹200",
+      numericPrice: 200,
       rating: "4.9",
-      reviewsCount: "98",
-      distance: "3.1 km away",
-      location: "Indiranagar, Bangalore",
-      experience: "4+ Years Of Experience",
-      image: "/assets/images/house_cleaning.png",
-      description: "Comprehensive deep cleaning services for apartments, villas, and workspaces using eco-friendly solutions.",
-      servicesOffered: ["Deep Cleaning", "Kitchen Sanitization", "Bathroom Disinfection", "Sofa Shampooing"],
-      gallery: [
-        "/assets/images/Rectangle 4249.png",
-        "/assets/images/Rectangle 4250.png"
-      ],
-      reviews: [
-        { id: "rev_3", name: "Ananya Roy", date: "3 days ago", rating: 5, comment: "Spotless cleaning! On time and very polite crew." }
-      ]
+      reviewsCount: "340",
+      distance: "1.2 km away",
+      location: "Gurugram, Cyber City",
+      experience: "8 yrs experience",
+      image: "/assets/images/daily_meals_hr.jpg",
+      description: "Wholesome corporate lunch catering prepared fresh daily. Healthy multi-cuisine meal trays with prompt delivery to your office.",
+      servicesOffered: ["Executive Thali", "Diet Meal Trays", "Fresh Fruit Bowl", "Dessert & Beverages"],
+      gallery: ["/assets/images/daily_meals_hr.jpg", "/assets/images/cooking.png"],
+      reviews: [{ id: "rev_1", name: "Vikas Aggarwal", date: "Yesterday", rating: 5, comment: "Always on time and meals are hot, low on oil, and super tasty." }]
     },
     {
-      id: "srv_cook",
-      title: "Gourmet Home Chef",
-      category: "Cooking",
-      price: "₹1,800/meal",
-      numericPrice: 1800,
-      rating: "4.7",
-      reviewsCount: "64",
-      distance: "1.5 km away",
-      location: "HSR Layout, Bangalore",
-      experience: "7+ Years Of Experience",
-      image: "/assets/images/cooking.png",
-      description: "Trained chef offering tailored multi-course meals at your home. North Indian, South Indian, Italian and Asian cuisines.",
-      servicesOffered: ["Dinner Parties", "Weekly Meal Prep", "Custom Diet Plans", "Special Occasions"],
-      gallery: [
-        "/assets/images/Rectangle 4250.png",
-        "/assets/images/Rectangle 4251.png"
-      ],
-      reviews: [
-        { id: "rev_4", name: "Vikram Malhotra", date: "5 days ago", rating: 5, comment: "Delicious food, left kitchen spotless!" }
-      ]
-    },
-    {
-      id: "srv_car",
-      title: "Eco Steam Car Wash",
-      category: "Car Wash",
-      price: "₹899",
-      numericPrice: 899,
+      id: "srv_ac_service",
+      serviceId: "srv_ac_service",
+      title: "AC Service",
+      category: "Appliance Repair",
+      price: "₹800",
+      numericPrice: 800,
       rating: "4.8",
-      reviewsCount: "210",
-      distance: "0.8 km away",
-      location: "Whitefield, Bangalore",
-      experience: "3+ Years Of Experience",
-      image: "/assets/images/car_wash.png",
-      description: "Doorstep high-pressure steam wash, interior vacuuming and polymer dashboard polish.",
-      servicesOffered: ["Exterior Foam Wash", "Interior Detailing", "Engine Bay Steam Clean", "Ceramic Wax"],
-      gallery: [
-        "/assets/images/Rectangle 4249.png",
-        "/assets/images/Rectangle 4251.png"
-      ],
-      reviews: [
-        { id: "rev_5", name: "Kunal Shah", date: "Yesterday", rating: 5, comment: "Looks brand new straight out of the showroom." }
-      ]
+      reviewsCount: "520",
+      distance: "1.8 km away",
+      location: "Sector 62, Noida",
+      experience: "3 yrs experience",
+      image: "/assets/images/ac_service_hr.jpg",
+      description: "Comprehensive split & window AC deep jet cleaning, gas level inspection, filter sanitization, and cooling check.",
+      servicesOffered: ["High Pressure Jet Foam Wash", "Refrigerant Gas Check", "Indoor Cooling Coil Descaling"],
+      gallery: ["/assets/images/ac_service_hr.jpg"],
+      reviews: [{ id: "rev_2", name: "Sanjay Verma", date: "3 days ago", rating: 5, comment: "Super cooling now! The technician was very polite and skilled." }]
+    },
+    {
+      id: "srv_office_boy",
+      serviceId: "srv_office_boy",
+      title: "Office Boy Services",
+      category: "Office Support",
+      price: "₹8,000",
+      numericPrice: 8000,
+      rating: "4.8",
+      reviewsCount: "115",
+      distance: "3.0 km away",
+      location: "Delhi NCR",
+      experience: "3 yrs experience",
+      image: "/assets/images/office_support_hr.jpg",
+      description: "Trained and verified office attendant for pantry management, filing, document dispatch, and meeting setups.",
+      servicesOffered: ["Pantry Beverage Setup", "Filing & Document Dispatch", "Conference Room Turnaround"],
+      gallery: ["/assets/images/office_support_hr.jpg"],
+      reviews: []
+    },
+    {
+      id: "srv_night_care",
+      serviceId: "srv_night_care",
+      title: "Night Care",
+      category: "Babysitting",
+      price: "₹1,350",
+      numericPrice: 1350,
+      rating: "5.0",
+      reviewsCount: "160",
+      distance: "1.1 km away",
+      location: "Delhi",
+      experience: "8 yrs experience",
+      image: "/assets/images/night_care_hr.jpg",
+      description: "Gentle, overnight newborn and infant care by background-verified nannies with infant CPR training.",
+      servicesOffered: ["Overnight Bottle Feeding", "Diaper Routine & Hygiene", "Sleep Routine Soothing"],
+      gallery: ["/assets/images/night_care_hr.jpg"],
+      reviews: []
     }
   ],
   activeBookings: [
     {
-      id: "COL95751",
-      serviceId: "srv_photo",
-      title: "Elite Photography Studio",
-      price: "₹2,500/hr",
-      location: "Koramangala, Bangalore",
-      date: "Today, December 16",
-      time: "2:00 PM - 4:00 PM",
+      id: "COL12345",
+      serviceId: "srv_corp_lunch",
+      title: "Corporate Lunch",
+      price: "₹200",
+      totalAmount: "₹400",
+      location: "Gurugram, Cyber City",
+      date: "Today, 1:00 PM",
+      time: "1:00 PM - 2:00 PM",
       status: "Confirmed",
-      imageUrl: "/assets/images/elite_photography.png"
-    },
-    {
-      id: "COL95752",
-      serviceId: "srv_clean",
-      title: "Premium House Cleaning",
-      price: "₹1,500/hr",
-      location: "Koramangala, Bangalore",
-      date: "Tomorrow, December 17",
-      time: "10:00 AM - 1:00 PM",
-      status: "Confirmed",
-      imageUrl: "/assets/images/house_cleaning.png"
+      imageUrl: "/assets/images/daily_meals_hr.jpg"
     }
   ],
   pastBookings: [
     {
-      id: "COL95750",
-      serviceId: "srv_photo",
-      title: "Elite Photography Studio",
-      price: "₹2,500/hr",
-      location: "Koramangala, Bangalore",
+      id: "COL11223",
+      serviceId: "srv_night_care",
+      title: "Night Care",
+      price: "₹1,350",
+      totalAmount: "₹1,350",
+      location: "Delhi NCR",
       date: "Dec 14, 2024",
-      time: "11:00 AM",
+      time: "8:00 PM - 6:00 AM",
       status: "Completed",
-      rating: 5.0,
-      imageUrl: "/assets/images/elite_photography.png"
+      imageUrl: "/assets/images/night_care_hr.jpg"
     }
   ],
   wallet: {
@@ -265,14 +235,16 @@ function getOfflineFallback(endpoint, options) {
     fallbackStore.wallet.balance = `₹${fallbackStore.wallet.numericBalance.toLocaleString('en-IN')}`;
     const newTx = {
       id: `tx_${Date.now()}`,
-      title: 'Wallet Top-up',
+      title: 'Money added via UPI',
       type: 'credit',
       amount: `+₹${body.amount}`,
+      numericAmount: Number(body.amount || 0),
+      positive: true,
       date: 'Just now',
       status: 'Success'
     };
     fallbackStore.wallet.transactions.unshift(newTx);
-    return { success: true, balance: fallbackStore.wallet.balance, transaction: newTx };
+    return { success: true, balance: fallbackStore.wallet.balance, transaction: newTx, wallet: fallbackStore.wallet };
   }
   if (endpoint.startsWith('/wallet/send-money') && method === 'POST') {
     fallbackStore.wallet.numericBalance = Math.max(0, fallbackStore.wallet.numericBalance - Number(body.amount || 0));
@@ -282,11 +254,13 @@ function getOfflineFallback(endpoint, options) {
       title: `Transfer to ${body.recipient || 'friend'}`,
       type: 'debit',
       amount: `-₹${body.amount}`,
+      numericAmount: -Number(body.amount || 0),
+      positive: false,
       date: 'Just now',
       status: 'Success'
     };
     fallbackStore.wallet.transactions.unshift(newTx);
-    return { success: true, balance: fallbackStore.wallet.balance, transaction: newTx };
+    return { success: true, balance: fallbackStore.wallet.balance, transaction: newTx, wallet: fallbackStore.wallet };
   }
   if (endpoint.startsWith('/wallet')) {
     return { success: true, wallet: fallbackStore.wallet };

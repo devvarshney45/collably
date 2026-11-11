@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, HelpCircle, Calendar, AlertTriangle, ChevronRight, ShieldCheck } from 'lucide-react';
+import { Search, MessageCircle, Calendar, AlertTriangle, ChevronRight, ShieldCheck } from 'lucide-react';
 
 export default function RequestsScreen({ onNavigate }) {
   const cards = [
@@ -12,12 +12,13 @@ export default function RequestsScreen({ onNavigate }) {
       bg: 'rgba(33, 150, 243, 0.1)',
     },
     {
-      id: 'serviceNotListed',
-      title: 'Service not listed',
-      subtitle: 'Custom request for help',
-      icon: HelpCircle,
-      color: '#9C27B0',
-      bg: 'rgba(156, 39, 176, 0.1)',
+      id: 'whatsappChat',
+      title: 'Chat on WhatsApp',
+      subtitle: 'Instant support & requests • +91 9818191755',
+      icon: MessageCircle,
+      color: '#25D366',
+      bg: 'rgba(37, 211, 102, 0.12)',
+      isWhatsApp: true
     },
     {
       id: 'helpWithBooking',
@@ -68,7 +69,13 @@ export default function RequestsScreen({ onNavigate }) {
           return (
             <div
               key={c.id}
-              onClick={() => onNavigate(c.id)}
+              onClick={() => {
+                if (c.isWhatsApp) {
+                  window.open('https://wa.me/919818191755?text=Hello%20Collably%2C%20I%20need%20assistance%20with%20a%20service.', '_blank');
+                } else {
+                  onNavigate(c.id);
+                }
+              }}
               style={{
                 backgroundColor: '#FFFFFF',
                 borderRadius: 16,
