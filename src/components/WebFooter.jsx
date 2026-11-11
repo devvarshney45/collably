@@ -42,7 +42,6 @@ export default function WebFooter({ onNavigate }) {
             <ul className="web-footer-links">
               <li><button onClick={() => onNavigate('dashboard_bookings')}>My Bookings</button></li>
               <li><button onClick={() => onNavigate('wallet')}>Collably Wallet & Points</button></li>
-              <li><button onClick={() => onNavigate('shopping')}>Collably Store (E-Commerce)</button></li>
               <li><button onClick={() => onNavigate('dashboard_requests')}>Requests Hub</button></li>
               <li><button onClick={() => onNavigate('urgentRequest')}>Urgent Assistance</button></li>
               <li><button onClick={() => onNavigate('dashboard_profile')}>Account & KYC Settings</button></li>

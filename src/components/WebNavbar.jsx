@@ -3,14 +3,12 @@ import {
   MapPin,
   ChevronDown,
   Search,
-  ShoppingCart,
   User,
   RotateCcw,
   Home,
   Calendar,
   ClipboardList,
   Wallet,
-  ShoppingBag,
   ShieldCheck,
   PhoneCall,
   Sparkles
@@ -23,7 +21,7 @@ export default function WebNavbar({
   onReset,
   screenList = [],
   activeAddress,
-  cartCount = 2,
+  cartCount = 0,
   isLoggedIn,
   onLogout
 }) {
@@ -34,7 +32,6 @@ export default function WebNavbar({
     { id: 'dashboard_home', tab: 'home', label: 'Home', icon: Home },
     { id: 'dashboard_bookings', tab: 'bookings', label: 'Bookings', icon: Calendar, badge: 2 },
     { id: 'dashboard_requests', tab: 'requests', label: 'Requests', icon: ClipboardList },
-    { id: 'shopping', tab: 'shopping', label: 'Shop', icon: ShoppingBag },
     { id: 'wallet', tab: 'wallet', label: 'Wallet', icon: Wallet },
   ];
 
@@ -353,49 +350,8 @@ export default function WebNavbar({
             })}
           </nav>
 
-          {/* 4. Cart & User Profile */}
+          {/* 4. User Profile / Sign In */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-            {/* Cart Button */}
-            <button
-              onClick={() => onNavigate('shopping')}
-              style={{
-                position: 'relative',
-                width: 38,
-                height: 38,
-                borderRadius: 10,
-                border: '1px solid #E2E8F0',
-                backgroundColor: '#F8FAFC',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#334155',
-                cursor: 'pointer',
-                transition: 'all 0.15s'
-              }}
-              title="Shopping Cart"
-            >
-              <ShoppingCart size={17} />
-              {cartCount > 0 && (
-                <span style={{
-                  position: 'absolute',
-                  top: -4,
-                  right: -4,
-                  backgroundColor: 'var(--primary)',
-                  color: 'white',
-                  fontSize: 10,
-                  fontWeight: 'bold',
-                  width: 17,
-                  height: 17,
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  {cartCount}
-                </span>
-              )}
-            </button>
-
             {/* Profile Avatar / Login */}
             {isLoggedIn ? (
               <div

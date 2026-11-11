@@ -18,7 +18,6 @@ import ServiceNotListedScreen from './screens/ServiceNotListedScreen';
 import HelpWithBookingScreen from './screens/HelpWithBookingScreen';
 import UrgentRequestScreen from './screens/UrgentRequestScreen';
 import WalletScreen from './screens/WalletScreen';
-import ShoppingScreen from './screens/ShoppingScreen';
 import WebNavbar from './components/WebNavbar';
 import WebFooter from './components/WebFooter';
 import './index.css';
@@ -97,23 +96,22 @@ export default function App() {
     { id: 'dashboard_home', label: '1. Home Dashboard' },
     { id: 'dashboard_bookings', label: '2. My Bookings' },
     { id: 'dashboard_requests', label: '3. Requests Hub' },
-    { id: 'shopping', label: '4. Collably Shop' },
-    { id: 'wallet', label: '5. Wallet & Points' },
-    { id: 'dashboard_profile', label: '6. User Profile' },
-    { id: 'serviceDetail', label: '7. Service Detail' },
-    { id: 'serviceBooking', label: '8. Service Booking' },
-    { id: 'quickBookings', label: '9. Quick Bookings' },
-    { id: 'search', label: '10. Search Services' },
-    { id: 'requestService', label: '11. Request Service' },
-    { id: 'serviceNotListed', label: '12. Service Not Listed' },
-    { id: 'helpWithBooking', label: '13. Help with Booking' },
-    { id: 'urgentRequest', label: '14. Urgent Request' },
-    { id: 'selectAddress', label: '15. Select Address' },
-    { id: 'map', label: '16. Map Location' },
-    { id: 'login', label: '17. Login / Sign In' },
-    { id: 'verification', label: '18. OTP Verification' },
-    { id: 'onboarding', label: '19. Onboarding' },
-    { id: 'splash', label: '20. Splash Screen' }
+    { id: 'wallet', label: '4. Wallet & Points' },
+    { id: 'dashboard_profile', label: '5. User Profile' },
+    { id: 'serviceDetail', label: '6. Service Detail' },
+    { id: 'serviceBooking', label: '7. Service Booking' },
+    { id: 'quickBookings', label: '8. Quick Bookings' },
+    { id: 'search', label: '9. Search Services' },
+    { id: 'requestService', label: '10. Request Service' },
+    { id: 'serviceNotListed', label: '11. Service Not Listed' },
+    { id: 'helpWithBooking', label: '12. Help with Booking' },
+    { id: 'urgentRequest', label: '13. Urgent Request' },
+    { id: 'selectAddress', label: '14. Select Address' },
+    { id: 'map', label: '15. Map Location' },
+    { id: 'login', label: '16. Login / Sign In' },
+    { id: 'verification', label: '17. OTP Verification' },
+    { id: 'onboarding', label: '18. Onboarding' },
+    { id: 'splash', label: '19. Splash Screen' }
   ];
 
   // Render the active screen content
@@ -269,14 +267,6 @@ export default function App() {
       case 'wallet':
         return (
           <WalletScreen
-            onNavigate={navigateTo}
-            onBack={handleBack}
-          />
-        );
-
-      case 'shopping':
-        return (
-          <ShoppingScreen
             onNavigate={navigateTo}
             onBack={handleBack}
           />
