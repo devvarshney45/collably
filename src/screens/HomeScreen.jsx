@@ -302,7 +302,9 @@ export default function HomeScreen({ onNavigate, onSelectService }) {
                 height: 115,
                 width: '100%',
                 overflow: 'hidden',
-                backgroundColor: 'rgba(0,0,0,0.03)'
+                borderRadius: '18px 18px 0 0',
+                backgroundColor: 'rgba(0,0,0,0.03)',
+                isolation: 'isolate'
               }}>
                 <img
                   src={cat.image}
@@ -311,11 +313,10 @@ export default function HomeScreen({ onNavigate, onSelectService }) {
                     width: '100%',
                     height: '100%',
                     objectFit: 'cover',
+                    objectPosition: 'center',
                     display: 'block',
-                    transition: 'transform 0.4s ease'
+                    borderRadius: '18px 18px 0 0'
                   }}
-                  onMouseOver={(e) => { e.currentTarget.style.transform = 'scale(1.08)'; }}
-                  onMouseOut={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
                 />
                 <span style={{
                   position: 'absolute',
@@ -547,8 +548,8 @@ export default function HomeScreen({ onNavigate, onSelectService }) {
         {/* Service Cards Grid (Desktop Standard Grid) */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
-          gap: 18
+          gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))',
+          gap: 20
         }}>
           {filteredServices.map((srv) => (
             <div
@@ -560,6 +561,7 @@ export default function HomeScreen({ onNavigate, onSelectService }) {
                 border: '1px solid #F1F5F9',
                 boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
                 overflow: 'hidden',
+                isolation: 'isolate',
                 cursor: 'pointer',
                 transition: 'all 0.2s ease',
                 display: 'flex',
@@ -574,8 +576,19 @@ export default function HomeScreen({ onNavigate, onSelectService }) {
                 e.currentTarget.style.boxShadow = '0 2px 10px rgba(0,0,0,0.03)';
               }}
             >
-              {/* Card Image Banner */}
-              <div style={{ height: 145, backgroundColor: '#F8FAFC', position: 'relative', overflow: 'hidden' }}>
+              {/* Card Image Banner - Exact 1:1 Aspect Ratio matching the original 1254x1254 banner artwork */}
+              <div style={{
+                width: '100%',
+                aspectRatio: '1 / 1',
+                backgroundColor: '#F8FAFC',
+                position: 'relative',
+                overflow: 'hidden',
+                borderRadius: '18px 18px 0 0',
+                isolation: 'isolate',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
                 <img
                   src={srv.image || '/assets/images/daily_meals_hr.jpg'}
                   alt={srv.title}
@@ -583,50 +596,50 @@ export default function HomeScreen({ onNavigate, onSelectService }) {
                   style={{
                     width: '100%',
                     height: '100%',
-                    objectFit: 'cover',
+                    objectFit: 'contain',
+                    objectPosition: 'center',
                     display: 'block',
-                    transition: 'transform 0.35s ease'
+                    borderRadius: '18px 18px 0 0'
                   }}
-                  onMouseOver={(e) => { e.currentTarget.style.transform = 'scale(1.06)'; }}
-                  onMouseOut={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
                   onError={(e) => { e.target.src = '/assets/images/daily_meals_hr.jpg'; }}
                 />
-                {srv.discount && (
-                  <span style={{
-                    position: 'absolute',
-                    top: 10,
-                    left: 10,
-                    backgroundColor: '#16A34A',
-                    color: 'white',
-                    fontSize: 10,
-                    fontWeight: 800,
-                    borderRadius: 6,
-                    padding: '3px 7px',
-                    boxShadow: '0 2px 6px rgba(0,0,0,0.2)'
-                  }}>
-                    {srv.discount}
-                  </span>
-                )}
-                {srv.category && (
-                  <span style={{
-                    position: 'absolute',
-                    top: 10,
-                    right: 10,
-                    backgroundColor: 'rgba(15, 23, 42, 0.75)',
-                    color: 'white',
-                    fontSize: 10,
-                    fontWeight: 700,
-                    borderRadius: 6,
-                    padding: '3px 8px',
-                    backdropFilter: 'blur(4px)'
-                  }}>
-                    {srv.category}
-                  </span>
-                )}
               </div>
 
               {/* Card Details */}
               <div style={{ padding: 14, display: 'flex', flexDirection: 'column', flex: 1 }}>
+                {/* Category & Discount Tag Row */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, gap: 8 }}>
+                  <span style={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    color: 'var(--primary)',
+                    backgroundColor: 'rgba(255, 107, 53, 0.08)',
+                    padding: '3px 8px',
+                    borderRadius: 6,
+                    letterSpacing: '0.4px',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
+                  }}>
+                    {srv.category}
+                  </span>
+                  {srv.discount && (
+                    <span style={{
+                      fontSize: 10,
+                      fontWeight: 800,
+                      color: '#16A34A',
+                      backgroundColor: '#DCFCE7',
+                      padding: '3px 8px',
+                      borderRadius: 6,
+                      whiteSpace: 'nowrap',
+                      flexShrink: 0
+                    }}>
+                      {srv.discount}
+                    </span>
+                  )}
+                </div>
+
                 <div style={{
                   fontWeight: 800,
                   fontSize: 15,

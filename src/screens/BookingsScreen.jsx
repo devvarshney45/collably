@@ -28,8 +28,20 @@ export default function BookingsScreen({ onNavigate, onSelectService, onBookingU
     setError(null);
     try {
       const data = await api.bookings.list();
-      const active = data.activeBookings || [];
-      const past = data.pastBookings || [];
+      const sortFn = (a, b) => {
+        const getMs = (item) => {
+          if (!item || !item.createdAt) return 0;
+          const c = item.createdAt;
+          if (c._seconds) return c._seconds * 1000 + (c._nanoseconds || 0) / 1000000;
+          if (typeof c.toDate === 'function') return c.toDate().getTime();
+          if (c instanceof Date) return c.getTime();
+          const ms = new Date(c).getTime();
+          return isNaN(ms) ? 0 : ms;
+        };
+        return getMs(b) - getMs(a);
+      };
+      const active = [...(data.activeBookings || [])].sort(sortFn);
+      const past = [...(data.pastBookings || [])].sort(sortFn);
       setActiveBookings(active);
       setPastBookings(past);
       if (onBookingUpdate) {

@@ -1,4 +1,4 @@
-const API_BASE = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE) || 'http://localhost:5020/api';
+const API_BASE = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE) || '/api';
 
 /**
  * Token and Local Storage Helpers
@@ -162,6 +162,20 @@ export function normalizeBooking(b) {
   };
 }
 
+export function isTokenValid(token) {
+  if (!token || typeof token !== 'string') return false;
+  const parts = token.split('.');
+  if (parts.length !== 3) return false;
+  try {
+    const payload = JSON.parse(atob(parts[1]));
+    if (!payload.exp) return true;
+    // Check if expiry is in future (buffer of 30 seconds)
+    return Math.floor(Date.now() / 1000) < (payload.exp - 30);
+  } catch (e) {
+    return false;
+  }
+}
+
 /**
  * Universal Fetch Request with JWT Auth, Auto-Retry on 401, & JSON parsing
  */
@@ -175,10 +189,16 @@ async function acquireFreshSession() {
   isRefreshing = true;
   refreshPromise = (async () => {
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
+
       const res = await fetch(`${API_BASE}/auth/demo-session`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal
       });
+      clearTimeout(timeoutId);
+
       const data = await res.json();
       if (data && data.accessToken) {
         setAuthSession(data.accessToken, data.data || data.user);
@@ -199,6 +219,18 @@ async function request(endpoint, options = {}) {
   const url = `${API_BASE}${endpoint}`;
   let token = getAuthToken();
 
+  const isPublicAuth = endpoint.startsWith('/auth/demo-session') || 
+                       endpoint.startsWith('/auth/send-otp') || 
+                       endpoint.startsWith('/auth/verify-otp') || 
+                       endpoint.startsWith('/auth/google') ||
+                       endpoint.startsWith('/services') ||
+                       endpoint.startsWith('/category');
+
+  // If token is missing, expired, or malformed and not a public route, auto-acquire valid session first
+  if (!isPublicAuth && (!token || !isTokenValid(token))) {
+    token = await acquireFreshSession();
+  }
+
   const getHeaders = (currToken) => ({
     'Content-Type': 'application/json',
     ...(currToken ? { 'Authorization': `Bearer ${currToken}` } : {})
@@ -214,19 +246,17 @@ async function request(endpoint, options = {}) {
     });
 
     // AUTO-RECOVER on 401: Invalid or expired session token
-    if (res.status === 401 && !options._retry && !endpoint.startsWith('/auth/logout')) {
-      // Clear obsolete token and acquire a fresh, active session
+    if (res.status === 401 && !options._retry && !endpoint.startsWith('/auth/logout') && !endpoint.startsWith('/auth/demo-session')) {
       clearAuthSession();
       const freshToken = await acquireFreshSession();
 
       if (freshToken) {
-        // Retry the exact same request once with the new token
         res = await fetch(url, {
           ...options,
           _retry: true,
           headers: {
-            ...getHeaders(freshToken),
             ...options.headers,
+            ...getHeaders(freshToken),
           },
         });
       }
@@ -262,8 +292,7 @@ function getOfflineFallback(endpoint, options) {
       profileImage: '/assets/images/app_icon.png',
       isLoggedIn: true
     };
-    setAuthSession('real_time_jwt_session', testUser);
-    return { success: true, accessToken: 'real_time_jwt_session', user: testUser, data: testUser };
+    return { success: true, user: testUser, data: testUser };
   }
   if (endpoint.startsWith('/profile') || endpoint.startsWith('/auth/me')) {
     const cached = getCachedUserProfile();
@@ -359,7 +388,7 @@ export const api = {
     },
     ensureSession: async (force = false) => {
       let token = getAuthToken();
-      if (!token || force) {
+      if (!token || !isTokenValid(token) || force) {
         return acquireFreshSession();
       }
       return token;
@@ -446,10 +475,25 @@ export const api = {
 
   bookings: {
     list: async () => {
-      if (!getAuthToken()) await api.auth.ensureSession();
+      if (!isTokenValid(getAuthToken())) await api.auth.ensureSession();
       const res = await request('/bookings/my');
-      const active = (res.activeBookings || []).map(normalizeBooking);
-      const past = (res.pastBookings || []).map(normalizeBooking);
+      const sortFn = (a, b) => {
+        const getMs = (item) => {
+          if (!item) return 0;
+          const c = item.createdAt;
+          if (!c) return 0;
+          if (c._seconds) return c._seconds * 1000 + (c._nanoseconds || 0) / 1000000;
+          if (typeof c.toDate === 'function') return c.toDate().getTime();
+          if (c instanceof Date) return c.getTime();
+          const ms = new Date(c).getTime();
+          return isNaN(ms) ? 0 : ms;
+        };
+        return getMs(b) - getMs(a);
+      };
+      const rawActive = Array.isArray(res?.activeBookings) ? res.activeBookings : (Array.isArray(res?.data) ? res.data : []);
+      const rawPast = Array.isArray(res?.pastBookings) ? res.pastBookings : [];
+      const active = rawActive.map(normalizeBooking).sort(sortFn);
+      const past = rawPast.map(normalizeBooking).sort(sortFn);
       return {
         success: true,
         activeBookings: active,
@@ -546,25 +590,67 @@ export const api = {
 
   wallet: {
     get: async () => {
-      if (!getAuthToken()) await api.auth.ensureSession();
+      if (!isTokenValid(getAuthToken())) await api.auth.ensureSession();
       const [walletRes, txRes] = await Promise.all([
-        request('/wallet').catch(() => ({ balance: 1500 })),
+        request('/wallet').catch(() => ({ balance: 0 })),
         request('/wallet/transactions').catch(() => ({ transactions: [] }))
       ]);
-      const rawBalance = walletRes.balance !== undefined ? walletRes.balance : (walletRes.data ? walletRes.data.balance : 1500);
+      const rawBalance = walletRes?.data?.balance !== undefined
+        ? walletRes.data.balance
+        : (walletRes?.balance !== undefined ? walletRes.balance : 0);
       const numBal = Number(rawBalance) || 0;
-      const txs = txRes.transactions || txRes.data || [];
-      const formattedTxs = txs.map(t => {
+
+      const rawList = Array.isArray(txRes?.data?.transactions)
+        ? txRes.data.transactions
+        : (Array.isArray(txRes?.transactions)
+          ? txRes.transactions
+          : (Array.isArray(txRes?.data)
+            ? txRes.data
+            : (Array.isArray(walletRes?.data?.recentTransactions)
+              ? walletRes.data.recentTransactions
+              : (Array.isArray(walletRes?.recentTransactions)
+                ? walletRes.recentTransactions
+                : []))));
+
+      const sortTxFn = (a, b) => {
+        const getMs = (t) => {
+          if (!t || !t.createdAt) return 0;
+          const c = t.createdAt;
+          if (c._seconds) return c._seconds * 1000 + (c._nanoseconds || 0) / 1000000;
+          if (typeof c.toDate === 'function') return c.toDate().getTime();
+          if (c instanceof Date) return c.getTime();
+          const ms = new Date(c).getTime();
+          return isNaN(ms) ? 0 : ms;
+        };
+        return getMs(b) - getMs(a);
+      };
+
+      const sortedTxs = [...rawList].sort(sortTxFn);
+
+      const formattedTxs = sortedTxs.map(t => {
         const amt = Number(t.amount || 0);
         const isCredit = t.type === 'credit';
+        let dateStr = 'Recently';
+        if (t.createdAt) {
+          const ms = t.createdAt._seconds ? t.createdAt._seconds * 1000 : (typeof t.createdAt === 'string' ? new Date(t.createdAt).getTime() : t.createdAt);
+          if (!isNaN(ms)) {
+            dateStr = new Date(ms).toLocaleDateString('en-IN', {
+              month: 'short',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            });
+          }
+        }
         return {
           id: t.id || `tx_${Math.random()}`,
           title: t.description || (isCredit ? 'Money Added' : 'Payment for Service'),
+          service: t.description || (isCredit ? 'UPI Top-up' : 'Booking Payment'),
           type: t.type || 'credit',
           amount: `${isCredit ? '+' : '-'}₹${amt.toLocaleString('en-IN')}`,
           numericAmount: isCredit ? amt : -amt,
           positive: isCredit,
-          date: t.createdAt ? new Date(t.createdAt._seconds ? t.createdAt._seconds * 1000 : t.createdAt).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Recently',
+          date: dateStr,
           status: t.status || 'Success'
         };
       });
@@ -572,10 +658,10 @@ export const api = {
       const walletObj = {
         balance: `₹${numBal.toLocaleString('en-IN')}`,
         numericBalance: numBal,
-        loyaltyPoints: `${Math.round(numBal / 2)} points`,
+        loyaltyPoints: `${Math.round(numBal / 10)} points`,
         currency: 'INR',
         transactions: formattedTxs,
-        data: walletRes.data || walletRes
+        data: walletRes?.data || walletRes
       };
 
       return {
@@ -586,19 +672,53 @@ export const api = {
     },
 
     transactions: async () => {
+      if (!isTokenValid(getAuthToken())) await api.auth.ensureSession();
       const res = await request('/wallet/transactions');
-      const txs = res.transactions || res.data || [];
-      const formatted = txs.map(t => {
+      const rawList = Array.isArray(res?.data?.transactions)
+        ? res.data.transactions
+        : (Array.isArray(res?.transactions)
+          ? res.transactions
+          : (Array.isArray(res?.data) ? res.data : []));
+
+      const sortTxFn = (a, b) => {
+        const getMs = (t) => {
+          if (!t || !t.createdAt) return 0;
+          const c = t.createdAt;
+          if (c._seconds) return c._seconds * 1000 + (c._nanoseconds || 0) / 1000000;
+          if (typeof c.toDate === 'function') return c.toDate().getTime();
+          if (c instanceof Date) return c.getTime();
+          const ms = new Date(c).getTime();
+          return isNaN(ms) ? 0 : ms;
+        };
+        return getMs(b) - getMs(a);
+      };
+
+      const sortedTxs = [...rawList].sort(sortTxFn);
+
+      const formatted = sortedTxs.map(t => {
         const amt = Number(t.amount || 0);
         const isCredit = t.type === 'credit';
+        let dateStr = 'Recently';
+        if (t.createdAt) {
+          const ms = t.createdAt._seconds ? t.createdAt._seconds * 1000 : (typeof t.createdAt === 'string' ? new Date(t.createdAt).getTime() : t.createdAt);
+          if (!isNaN(ms)) {
+            dateStr = new Date(ms).toLocaleDateString('en-IN', {
+              month: 'short',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            });
+          }
+        }
         return {
           id: t.id || `tx_${Math.random()}`,
           title: t.description || (isCredit ? 'Money Added' : 'Payment for Service'),
+          service: t.description || (isCredit ? 'UPI Top-up' : 'Booking Payment'),
           type: t.type || 'credit',
           amount: `${isCredit ? '+' : '-'}₹${amt.toLocaleString('en-IN')}`,
           numericAmount: isCredit ? amt : -amt,
           positive: isCredit,
-          date: t.createdAt ? new Date(t.createdAt._seconds ? t.createdAt._seconds * 1000 : t.createdAt).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Recently',
+          date: dateStr,
           status: t.status || 'Success'
         };
       });
@@ -608,14 +728,22 @@ export const api = {
       };
     },
 
-    addMoney: async (amount) => {
+    addMoney: async (amount, paymentMethod = 'UPI') => {
       if (!getAuthToken()) await api.auth.ensureSession();
       return request('/wallet/add-money', {
         method: 'POST',
         body: JSON.stringify({
           amount: Number(amount),
-          paymentMethod: 'UPI'
+          paymentMethod
         })
+      });
+    },
+
+    walletPay: async (data) => {
+      if (!getAuthToken()) await api.auth.ensureSession();
+      return request('/payment/wallet-pay', {
+        method: 'POST',
+        body: JSON.stringify(data)
       });
     },
 

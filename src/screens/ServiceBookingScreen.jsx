@@ -68,11 +68,30 @@ export default function ServiceBookingScreen({ onNavigate, selectedService, onBa
     return getFirstAvailableSlot(initDate);
   });
   const [selectedDuration, setSelectedDuration] = useState('1 Hour Session');
-  const [selectedPayment, setSelectedPayment] = useState('UPI');
+  const [selectedPayment, setSelectedPayment] = useState('Wallet');
   const [note, setNote] = useState('');
   const [bookingConfirmed, setBookingConfirmed] = useState(null);
   const [loading, setLoading] = useState(false);
   const [bookingError, setBookingError] = useState('');
+  const [walletBalance, setWalletBalance] = useState(null);
+  const [loadingWallet, setLoadingWallet] = useState(true);
+
+  React.useEffect(() => {
+    let isMounted = true;
+    api.wallet.get().then(res => {
+      if (isMounted && res) {
+        const num = res.numericBalance !== undefined
+          ? res.numericBalance
+          : (typeof res.balance === 'number' ? res.balance : Number(String(res.balance || '0').replace(/[^\d.]/g, '')) || 0);
+        setWalletBalance(num);
+      }
+    }).catch(() => {
+      if (isMounted) setWalletBalance(0);
+    }).finally(() => {
+      if (isMounted) setLoadingWallet(false);
+    });
+    return () => { isMounted = false; };
+  }, []);
 
   const handleDateChange = (d) => {
     setSelectedDate(d);
@@ -112,9 +131,20 @@ export default function ServiceBookingScreen({ onNavigate, selectedService, onBa
   const totalAmount = Math.max(0, basePrice - discountAmount + platformFee);
   const formattedTotal = `₹${totalAmount.toLocaleString('en-IN')}`;
 
+  const isWallet = selectedPayment === 'Wallet';
+  const isInsufficientWallet = isWallet && (walletBalance === null || walletBalance < totalAmount);
+
   const handleBookNow = async () => {
     setLoading(true);
     setBookingError('');
+
+    // Strict validation: Prevent booking if paying with Wallet and balance is insufficient
+    if (isInsufficientWallet) {
+      setBookingError(`Insufficient wallet balance. You have ₹${(walletBalance || 0).toLocaleString('en-IN')}, but this booking requires ${formattedTotal}. Please add money to your wallet or select UPI / Card.`);
+      setLoading(false);
+      return;
+    }
+
     try {
       const now = new Date();
       let bookingDateStr = now.toISOString().split('T')[0];
@@ -130,7 +160,7 @@ export default function ServiceBookingScreen({ onNavigate, selectedService, onBa
       }
 
       const timeSlot = selectedTime || getFirstAvailableSlot(selectedDate);
-      const paymentId = 'pay_web_' + Date.now();
+      const paymentId = (isWallet ? 'pay_wallet_' : 'pay_web_') + Date.now();
 
       const data = await api.bookings.create({
         serviceId: s.id || s.serviceId || '2o1FYbRgWazZWMTMw5Z3',
@@ -139,13 +169,22 @@ export default function ServiceBookingScreen({ onNavigate, selectedService, onBa
         duration: selectedDuration,
         note: note || '',
         paymentId,
-        paymentStatus: 'success',
+        paymentMethod: selectedPayment,
+        paymentStatus: isWallet ? 'paid' : 'success',
         status: 'pending_admin',
         totalAmount: formattedTotal,
         numericTotal: totalAmount
       });
 
       if (data && (data.success || data.bookingId)) {
+        if (isWallet) {
+          const newBal = (data && data.newWalletBalance !== undefined)
+            ? data.newWalletBalance
+            : Math.max(0, (walletBalance || totalAmount) - totalAmount);
+          setWalletBalance(newBal);
+          api.wallet.get().catch(() => {});
+        }
+
         const confirmedId = data.bookingId || data.id || `COL${Math.floor(10000 + Math.random() * 90000)}`;
 
         setBookingConfirmed({
@@ -631,7 +670,18 @@ export default function ServiceBookingScreen({ onNavigate, selectedService, onBa
             {[
               { id: 'UPI', title: 'UPI', subtitle: 'Pay with UPI apps (GPay, PhonePe, Paytm)', icon: Smartphone },
               { id: 'Card', title: 'Credit / Debit Card', subtitle: 'Visa, Mastercard, RuPay', icon: CreditCard },
-              { id: 'Wallet', title: 'Collably Wallet', subtitle: 'Pay from instant wallet balance', icon: Wallet }
+              {
+                id: 'Wallet',
+                title: 'Collably Wallet',
+                subtitle: loadingWallet
+                  ? 'Checking wallet balance...'
+                  : (walletBalance !== null
+                      ? (walletBalance < totalAmount
+                          ? `Available: ₹${walletBalance.toLocaleString('en-IN')} (Insufficient for this booking)`
+                          : `Available: ₹${walletBalance.toLocaleString('en-IN')} (Balance sufficient)`)
+                      : 'Pay from instant wallet balance'),
+                icon: Wallet
+              }
             ].map((pm) => {
               const active = selectedPayment === pm.id;
               const IconComp = pm.icon;
@@ -688,6 +738,69 @@ export default function ServiceBookingScreen({ onNavigate, selectedService, onBa
               );
             })}
           </div>
+
+          {/* Insufficient Wallet Warning Card */}
+          {isInsufficientWallet && (
+            <div style={{
+              marginTop: 14,
+              padding: '14px 18px',
+              backgroundColor: '#FEF2F2',
+              border: '1.5px solid #FCA5A5',
+              borderRadius: 14,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <AlertCircle size={22} color="#DC2626" />
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: '#991B1B' }}>
+                    Insufficient Wallet Balance
+                  </div>
+                  <div style={{ fontSize: 12, color: '#B91C1C', marginTop: 2 }}>
+                    Available: ₹{(walletBalance || 0).toLocaleString('en-IN')} • Required: {formattedTotal}
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => onNavigate('wallet')}
+                style={{
+                  backgroundColor: '#DC2626',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: 8,
+                  padding: '8px 14px',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                + Add Money
+              </button>
+            </div>
+          )}
+
+          {/* Wallet Sufficient Confirmation Card */}
+          {selectedPayment === 'Wallet' && !isInsufficientWallet && walletBalance !== null && (
+            <div style={{
+              marginTop: 14,
+              padding: '12px 16px',
+              backgroundColor: '#F0FDF4',
+              border: '1.5px solid #86EFAC',
+              borderRadius: 14,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10
+            }}>
+              <Check size={18} color="#16A34A" />
+              <div style={{ fontSize: 12, color: '#166534', fontWeight: 600 }}>
+                Wallet balance is sufficient! {formattedTotal} will be deducted upon confirmation.
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Booking Error Banner */}
@@ -719,10 +832,23 @@ export default function ServiceBookingScreen({ onNavigate, selectedService, onBa
         <button
           className="app-btn"
           onClick={handleBookNow}
-          disabled={loading}
-          style={{ width: '100%', height: 50, borderRadius: 14, fontSize: 16, fontWeight: 800 }}
+          disabled={loading || isInsufficientWallet}
+          style={{
+            width: '100%',
+            height: 50,
+            borderRadius: 14,
+            fontSize: 16,
+            fontWeight: 800,
+            opacity: isInsufficientWallet ? 0.6 : 1,
+            cursor: isInsufficientWallet ? 'not-allowed' : 'pointer',
+            backgroundColor: isInsufficientWallet ? '#94A3B8' : 'var(--primary)'
+          }}
         >
-          {loading ? 'Securing Booking...' : `Book Now • ${formattedTotal}`}
+          {loading
+            ? 'Securing Booking...'
+            : (isInsufficientWallet
+                ? `Insufficient Wallet Balance (${formattedTotal})`
+                : `Book Now • ${formattedTotal}`)}
         </button>
       </div>
     </div>

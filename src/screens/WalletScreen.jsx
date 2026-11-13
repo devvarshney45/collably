@@ -18,8 +18,8 @@ import { api } from '../api';
 
 export default function WalletScreen({ onNavigate, onBack }) {
   const [selectedTabIndex, setSelectedTabIndex] = useState(0); // 0: Balance, 1: Add Money, 2: History
-  const [balance, setBalance] = useState('₹1247.50');
-  const [loyaltyPoints, setLoyaltyPoints] = useState('890 points');
+  const [balance, setBalance] = useState('₹...');
+  const [loyaltyPoints, setLoyaltyPoints] = useState('0 points');
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [addAmount, setAddAmount] = useState('500');
@@ -37,38 +37,19 @@ export default function WalletScreen({ onNavigate, onBack }) {
   const loadWallet = async () => {
     try {
       const data = await api.wallet.get();
-      if (data.wallet) {
-        setBalance(typeof data.wallet.balance === 'number' ? `₹${data.wallet.balance.toFixed(2)}` : data.wallet.balance);
-        if (data.wallet.loyaltyPoints) setLoyaltyPoints(`${data.wallet.loyaltyPoints} points`);
-        setTransactions(data.wallet.transactions || []);
+      if (data && data.wallet) {
+        const balVal = data.wallet.numericBalance !== undefined
+          ? data.wallet.numericBalance
+          : (typeof data.wallet.balance === 'number' ? data.wallet.balance : parseFloat(String(data.wallet.balance || 0).replace(/[^\d.]/g, '')) || 0);
+        setBalance(`₹${balVal.toLocaleString('en-IN')}`);
+        if (data.wallet.loyaltyPoints) setLoyaltyPoints(`${data.wallet.loyaltyPoints}`);
+        setTransactions(Array.isArray(data.wallet.transactions) ? data.wallet.transactions : []);
       }
     } catch (err) {
-      console.error(err);
-      setBalance('₹1247.50');
-      setLoyaltyPoints('890 points');
-      setTransactions([
-        {
-          id: 'tx_1',
-          title: 'Referral bonus',
-          date: '2024-01-15 • 10:30 AM',
-          amount: '+₹100',
-          positive: true
-        },
-        {
-          id: 'tx_2',
-          title: 'Photography booking payment',
-          date: '2024-01-14 • 3:45 PM',
-          amount: '-₹250',
-          positive: false
-        },
-        {
-          id: 'tx_3',
-          title: 'Money added via UPI',
-          date: '2024-01-12 • 11:20 AM',
-          amount: '+₹500',
-          positive: true
-        }
-      ]);
+      console.error('Wallet load error:', err);
+      setBalance('₹0.00');
+      setLoyaltyPoints('0 points');
+      setTransactions([]);
     }
   };
 
@@ -82,19 +63,18 @@ export default function WalletScreen({ onNavigate, onBack }) {
     if (!num || num <= 0) return;
     setLoading(true);
     try {
-      const res = await api.wallet.addMoney(num);
+      const res = await api.wallet.addMoney(num, selectedPaymentMethod);
       const newBal = res?.data?.newBalance ?? res?.wallet?.balance ?? res?.newBalance;
       if (newBal !== undefined) {
-        setBalance(`₹${Number(newBal).toFixed(2)}`);
+        setBalance(`₹${Number(newBal).toLocaleString('en-IN')}`);
       }
-      showToastMsg(`₹${num} added successfully via ${selectedPaymentMethod}!`);
+      showToastMsg(`₹${num.toLocaleString('en-IN')} added successfully via ${selectedPaymentMethod}!`);
       setAddAmount('');
       setSelectedTabIndex(0);
       await loadWallet();
     } catch (err) {
       console.error('Wallet add error:', err);
-      showToastMsg(`₹${num} added successfully via ${selectedPaymentMethod}!`);
-      setSelectedTabIndex(0);
+      showToastMsg(`Failed to add money: ${err.message || 'Please try again.'}`);
     } finally {
       setLoading(false);
     }
