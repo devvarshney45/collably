@@ -14,23 +14,72 @@ import {
   MapPin,
   ChevronDown,
   Tag,
-  ShieldCheck
+  ShieldCheck,
+  AlertCircle
 } from 'lucide-react';
 import { api } from '../api';
 
 export default function ServiceBookingScreen({ onNavigate, selectedService, onBack, onBookingSuccess }) {
+  const allTimes = ['09:00 AM', '11:00 AM', '01:00 PM', '03:00 PM', '05:00 PM', '07:00 PM', '09:00 PM'];
+  const durations = ['1 Hour Session', '2 Hour Session', '4 Hour Session'];
+
+  const getDynamicDates = () => {
+    const list = ['Today', 'Tomorrow'];
+    const now = new Date();
+    for (let i = 2; i <= 4; i++) {
+      const d = new Date(now);
+      d.setDate(now.getDate() + i);
+      list.push(d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+    }
+    return list;
+  };
+
+  const dates = getDynamicDates();
+
+  const isTimeSlotPast = (slotStr, dateStr) => {
+    if (dateStr !== 'Today') return false;
+    const now = new Date();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+    const [timePart, meridian] = slotStr.split(' ');
+    let [hours, minutes] = (timePart || '0:0').split(':').map(Number);
+    if (meridian === 'PM' && hours !== 12) hours += 12;
+    if (meridian === 'AM' && hours === 12) hours = 0;
+    const slotMinutes = hours * 60 + (minutes || 0);
+
+    return slotMinutes <= currentMinutes;
+  };
+
+  const getFirstAvailableSlot = (dateStr) => {
+    for (const t of allTimes) {
+      if (!isTimeSlotPast(t, dateStr)) return t;
+    }
+    return allTimes[0];
+  };
+
+  const areAllTodaySlotsPast = () => {
+    return allTimes.every(t => isTimeSlotPast(t, 'Today'));
+  };
+
   const [phase, setPhase] = useState(1);
-  const [selectedDate, setSelectedDate] = useState('Today');
-  const [selectedTime, setSelectedTime] = useState('11:00 AM');
+  const [selectedDate, setSelectedDate] = useState(() => (areAllTodaySlotsPast() ? 'Tomorrow' : 'Today'));
+  const [selectedTime, setSelectedTime] = useState(() => {
+    const initDate = areAllTodaySlotsPast() ? 'Tomorrow' : 'Today';
+    return getFirstAvailableSlot(initDate);
+  });
   const [selectedDuration, setSelectedDuration] = useState('1 Hour Session');
   const [selectedPayment, setSelectedPayment] = useState('UPI');
   const [note, setNote] = useState('');
   const [bookingConfirmed, setBookingConfirmed] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [bookingError, setBookingError] = useState('');
 
-  const dates = ['Today', 'Tomorrow', 'Dec 18', 'Dec 19'];
-  const times = ['9:00 AM', '11:00 AM', '1:00 PM', '3:00 PM', '5:00 PM', '7:00 PM'];
-  const durations = ['1 Hour Session', '2 Hour Session', '4 Hour Session'];
+  const handleDateChange = (d) => {
+    setSelectedDate(d);
+    if (isTimeSlotPast(selectedTime, d)) {
+      setSelectedTime(getFirstAvailableSlot(d));
+    }
+  };
 
   const s = selectedService || {
     id: 'srv_corp_lunch',
@@ -63,27 +112,24 @@ export default function ServiceBookingScreen({ onNavigate, selectedService, onBa
   const totalAmount = Math.max(0, basePrice - discountAmount + platformFee);
   const formattedTotal = `₹${totalAmount.toLocaleString('en-IN')}`;
 
-  const [bookingError, setBookingError] = useState('');
-
   const handleBookNow = async () => {
     setLoading(true);
     setBookingError('');
     try {
       const now = new Date();
-      let bookingDateStr;
-      if (selectedDate === 'Today') {
-        bookingDateStr = now.toISOString().split('T')[0];
-      } else if (selectedDate === 'Tomorrow') {
+      let bookingDateStr = now.toISOString().split('T')[0];
+      if (selectedDate === 'Tomorrow') {
         const d = new Date(now);
         d.setDate(now.getDate() + 1);
         bookingDateStr = d.toISOString().split('T')[0];
-      } else {
-        const d = new Date(now);
-        d.setDate(now.getDate() + 2);
-        bookingDateStr = d.toISOString().split('T')[0];
+      } else if (selectedDate !== 'Today') {
+        const parsed = new Date(`${selectedDate}, ${now.getFullYear()}`);
+        if (!isNaN(parsed.getTime())) {
+          bookingDateStr = parsed.toISOString().split('T')[0];
+        }
       }
 
-      const timeSlot = selectedTime || '11:00 AM';
+      const timeSlot = selectedTime || getFirstAvailableSlot(selectedDate);
       const paymentId = 'pay_web_' + Date.now();
 
       const data = await api.bookings.create({
@@ -99,48 +145,33 @@ export default function ServiceBookingScreen({ onNavigate, selectedService, onBa
         numericTotal: totalAmount
       });
 
-      const confirmedId = data.bookingId || data.booking?.id || `COL${Math.floor(10000 + Math.random() * 90000)}`;
+      if (data && (data.success || data.bookingId)) {
+        const confirmedId = data.bookingId || data.id || `COL${Math.floor(10000 + Math.random() * 90000)}`;
 
-      setBookingConfirmed({
-        id: confirmedId,
-        bookingId: confirmedId,
-        title: s.title || s.name || 'Service Booking',
-        date: `${selectedDate} (${bookingDateStr})`,
-        time: timeSlot,
-        duration: selectedDuration,
-        location: s.location || 'Delhi NCR & Noida',
-        totalAmount: formattedTotal,
-        numericTotal: totalAmount,
-        basePrice,
-        discountAmount,
-        discountRate,
-        platformFee
-      });
-      setPhase(2);
-      if (onBookingSuccess) onBookingSuccess();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+        setBookingConfirmed({
+          id: confirmedId,
+          bookingId: confirmedId,
+          title: s.title || s.name || 'Service Booking',
+          date: `${selectedDate} (${bookingDateStr})`,
+          time: timeSlot,
+          duration: selectedDuration,
+          location: s.location || 'Delhi NCR & Noida',
+          totalAmount: formattedTotal,
+          numericTotal: totalAmount,
+          basePrice,
+          discountAmount,
+          discountRate,
+          platformFee
+        });
+        setPhase(2);
+        if (onBookingSuccess) onBookingSuccess();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        throw new Error(data?.message || 'Booking creation failed');
+      }
     } catch (err) {
-      console.warn('Booking create notice:', err);
-      // Fallback with same accurate calculation
-      const fallbackId = `COL${Math.floor(10000 + Math.random() * 90000)}`;
-      setBookingConfirmed({
-        id: fallbackId,
-        bookingId: fallbackId,
-        title: s.title || s.name || 'Service Booking',
-        date: `${selectedDate}`,
-        time: selectedTime || '11:00 AM',
-        duration: selectedDuration,
-        location: s.location || 'Delhi NCR & Noida',
-        totalAmount: formattedTotal,
-        numericTotal: totalAmount,
-        basePrice,
-        discountAmount,
-        discountRate,
-        platformFee
-      });
-      setPhase(2);
-      if (onBookingSuccess) onBookingSuccess();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      console.error('Booking create notice:', err);
+      setBookingError(err.message || 'Cannot create booking for past time. Please select an upcoming time slot.');
     } finally {
       setLoading(false);
     }
@@ -402,7 +433,7 @@ export default function ServiceBookingScreen({ onNavigate, selectedService, onBa
                 <button
                   key={d}
                   type="button"
-                  onClick={() => setSelectedDate(d)}
+                  onClick={() => handleDateChange(d)}
                   style={{
                     padding: '10px 18px',
                     borderRadius: 12,
@@ -412,7 +443,8 @@ export default function ServiceBookingScreen({ onNavigate, selectedService, onBa
                     fontWeight: active ? 'bold' : '500',
                     fontSize: 13,
                     cursor: 'pointer',
-                    transition: 'all 0.2s'
+                    transition: 'all 0.2s',
+                    whiteSpace: 'nowrap'
                   }}
                 >
                   {d}
@@ -424,31 +456,50 @@ export default function ServiceBookingScreen({ onNavigate, selectedService, onBa
 
         {/* 2. Select Time */}
         <div style={{ marginBottom: 24 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-            <Clock size={18} color="var(--primary)" />
-            <h3 style={{ fontSize: 15, fontWeight: 'bold', color: '#000000', margin: 0 }}>Select Time</h3>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Clock size={18} color="var(--primary)" />
+              <h3 style={{ fontSize: 15, fontWeight: 'bold', color: '#000000', margin: 0 }}>Select Time</h3>
+            </div>
+            {selectedDate === 'Today' && (
+              <span style={{ fontSize: 11, color: '#64748B', fontWeight: 600 }}>
+                Showing upcoming slots for today
+              </span>
+            )}
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: 10 }}>
-            {times.map((t) => {
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(105px, 1fr))', gap: 10 }}>
+            {allTimes.map((t) => {
+              const isPast = isTimeSlotPast(t, selectedDate);
               const active = selectedTime === t;
               return (
                 <button
                   key={t}
                   type="button"
-                  onClick={() => setSelectedTime(t)}
+                  disabled={isPast}
+                  onClick={() => !isPast && setSelectedTime(t)}
                   style={{
                     padding: '10px 12px',
                     borderRadius: 12,
-                    border: active ? '1.5px solid var(--primary)' : '1px solid #E2E8F0',
-                    backgroundColor: active ? 'var(--primary)' : '#FFFFFF',
-                    color: active ? '#FFFFFF' : '#334155',
+                    border: isPast
+                      ? '1px dashed #E2E8F0'
+                      : (active ? '1.5px solid var(--primary)' : '1px solid #E2E8F0'),
+                    backgroundColor: isPast
+                      ? '#F8FAFC'
+                      : (active ? 'var(--primary)' : '#FFFFFF'),
+                    color: isPast
+                      ? '#94A3B8'
+                      : (active ? '#FFFFFF' : '#334155'),
                     fontWeight: active ? 'bold' : '500',
                     fontSize: 13,
-                    cursor: 'pointer',
+                    cursor: isPast ? 'not-allowed' : 'pointer',
                     textAlign: 'center',
-                    transition: 'all 0.2s'
+                    opacity: isPast ? 0.45 : 1,
+                    textDecoration: isPast ? 'line-through' : 'none',
+                    transition: 'all 0.2s',
+                    position: 'relative'
                   }}
+                  title={isPast ? 'This slot has already passed today' : t}
                 >
                   {t}
                 </button>
@@ -638,6 +689,26 @@ export default function ServiceBookingScreen({ onNavigate, selectedService, onBa
             })}
           </div>
         </div>
+
+        {/* Booking Error Banner */}
+        {bookingError && (
+          <div style={{
+            padding: '12px 16px',
+            backgroundColor: '#FEF2F2',
+            border: '1px solid #FEE2E2',
+            borderRadius: 12,
+            color: '#B91C1C',
+            fontSize: 13,
+            fontWeight: 600,
+            marginBottom: 16,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8
+          }}>
+            <AlertCircle size={16} />
+            <span>{bookingError}</span>
+          </div>
+        )}
 
         {/* Agreement notice */}
         <p style={{ textAlign: 'center', fontSize: 12, color: '#64748B', marginBottom: 20 }}>
