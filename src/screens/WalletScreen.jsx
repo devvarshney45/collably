@@ -83,35 +83,16 @@ export default function WalletScreen({ onNavigate, onBack }) {
     setLoading(true);
     try {
       const res = await api.wallet.addMoney(num);
-      if (res.wallet) {
-        const balNum = typeof res.wallet.balance === 'number' ? res.wallet.balance : parseFloat(res.wallet.balance) || 0;
-        setBalance(`₹${balNum.toFixed(2)}`);
-        if (res.wallet.loyaltyPoints !== undefined) {
-          setLoyaltyPoints(`${res.wallet.loyaltyPoints} points`);
-        }
-        if (Array.isArray(res.wallet.transactions)) {
-          setTransactions([...res.wallet.transactions]);
-        }
-      } else if (res.transaction) {
-        setTransactions((prev) => [res.transaction, ...prev]);
+      const newBal = res?.data?.newBalance ?? res?.wallet?.balance ?? res?.newBalance;
+      if (newBal !== undefined) {
+        setBalance(`₹${Number(newBal).toFixed(2)}`);
       }
       showToastMsg(`₹${num} added successfully via ${selectedPaymentMethod}!`);
+      setAddAmount('');
       setSelectedTabIndex(0);
+      await loadWallet();
     } catch (err) {
       console.error('Wallet add error:', err);
-      const fallbackTx = {
-        id: `tx_${Date.now()}`,
-        title: `Money added via ${selectedPaymentMethod}`,
-        date: `${new Date().toISOString().slice(0, 10)} • Just now`,
-        amount: `+₹${num.toLocaleString('en-IN')}`,
-        numericAmount: num,
-        positive: true
-      };
-      setTransactions((prev) => [fallbackTx, ...prev]);
-      setBalance((prev) => {
-        const curr = parseFloat(String(prev).replace(/[^0-9.]/g, '')) || 0;
-        return `₹${(curr + num).toFixed(2)}`;
-      });
       showToastMsg(`₹${num} added successfully via ${selectedPaymentMethod}!`);
       setSelectedTabIndex(0);
     } finally {

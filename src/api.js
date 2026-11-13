@@ -163,24 +163,74 @@ export function normalizeBooking(b) {
 }
 
 /**
- * Universal Fetch Request with JWT Auth & JSON parsing
+ * Universal Fetch Request with JWT Auth, Auto-Retry on 401, & JSON parsing
  */
+let isRefreshing = false;
+let refreshPromise = null;
+
+async function acquireFreshSession() {
+  if (isRefreshing && refreshPromise) {
+    return refreshPromise;
+  }
+  isRefreshing = true;
+  refreshPromise = (async () => {
+    try {
+      const res = await fetch(`${API_BASE}/auth/demo-session`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const data = await res.json();
+      if (data && data.accessToken) {
+        setAuthSession(data.accessToken, data.data || data.user);
+        return data.accessToken;
+      }
+    } catch (e) {
+      console.warn('[Collably Auth] Auto-acquire session failed:', e);
+    } finally {
+      isRefreshing = false;
+      refreshPromise = null;
+    }
+    return '';
+  })();
+  return refreshPromise;
+}
+
 async function request(endpoint, options = {}) {
   const url = `${API_BASE}${endpoint}`;
-  const token = getAuthToken();
-  const defaultHeaders = {
+  let token = getAuthToken();
+
+  const getHeaders = (currToken) => ({
     'Content-Type': 'application/json',
-    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-  };
+    ...(currToken ? { 'Authorization': `Bearer ${currToken}` } : {})
+  });
 
   try {
-    const res = await fetch(url, {
+    let res = await fetch(url, {
       ...options,
       headers: {
-        ...defaultHeaders,
+        ...getHeaders(token),
         ...options.headers,
       },
     });
+
+    // AUTO-RECOVER on 401: Invalid or expired session token
+    if (res.status === 401 && !options._retry && !endpoint.startsWith('/auth/logout')) {
+      // Clear obsolete token and acquire a fresh, active session
+      clearAuthSession();
+      const freshToken = await acquireFreshSession();
+
+      if (freshToken) {
+        // Retry the exact same request once with the new token
+        res = await fetch(url, {
+          ...options,
+          _retry: true,
+          headers: {
+            ...getHeaders(freshToken),
+            ...options.headers,
+          },
+        });
+      }
+    }
 
     const data = await res.json();
     if (!res.ok) {
@@ -307,18 +357,10 @@ export const api = {
         data: res.data || res.user || getCachedUserProfile()
       };
     },
-    ensureSession: async () => {
+    ensureSession: async (force = false) => {
       let token = getAuthToken();
-      if (!token) {
-        try {
-          const res = await request('/auth/demo-session');
-          if (res && res.accessToken) {
-            setAuthSession(res.accessToken, res.data);
-            return res.accessToken;
-          }
-        } catch (e) {
-          console.warn('Failed to auto-acquire session:', e);
-        }
+      if (!token || force) {
+        return acquireFreshSession();
       }
       return token;
     },
@@ -567,6 +609,7 @@ export const api = {
     },
 
     addMoney: async (amount) => {
+      if (!getAuthToken()) await api.auth.ensureSession();
       return request('/wallet/add-money', {
         method: 'POST',
         body: JSON.stringify({
