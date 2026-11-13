@@ -179,9 +179,28 @@ export default function ServiceDetailScreen({ onNavigate, selectedService, onBac
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-              <span style={{ fontSize: 24, fontWeight: 'bold', color: '#000000' }}>
-                {s.price}
-              </span>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                <span style={{ fontSize: 26, fontWeight: 900, color: 'var(--primary)' }}>
+                  {s.price}
+                </span>
+                {s.originalPrice && (
+                  <span style={{ fontSize: 16, color: '#94A3B8', textDecoration: 'line-through' }}>
+                    {s.originalPrice}
+                  </span>
+                )}
+                {s.discount && (
+                  <span style={{
+                    backgroundColor: '#16A34A',
+                    color: 'white',
+                    fontSize: 11,
+                    fontWeight: 800,
+                    borderRadius: 6,
+                    padding: '3px 8px'
+                  }}>
+                    {s.discount}
+                  </span>
+                )}
+              </div>
               <button
                 onClick={handleBookNow}
                 className="app-btn"
@@ -194,7 +213,7 @@ export default function ServiceDetailScreen({ onNavigate, selectedService, onBac
 
           <div style={{ height: 1, backgroundColor: '#F1F5F9', margin: '24px 0' }} />
 
-          {/* 3 Info Items Row (Exact Flutter Layout) */}
+          {/* 3 Info Items Row (Real App Backend Data) */}
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(3, 1fr)',
@@ -217,7 +236,7 @@ export default function ServiceDetailScreen({ onNavigate, selectedService, onBac
                 <MapPin size={20} />
               </div>
               <span style={{ fontSize: 13, color: '#334155', fontWeight: 600, lineHeight: 1.4 }}>
-                Koramangala,<br />Bangalore
+                {s.location || 'Delhi NCR & Noida'}
               </span>
             </div>
 
@@ -236,7 +255,7 @@ export default function ServiceDetailScreen({ onNavigate, selectedService, onBac
                 <Clock size={20} />
               </div>
               <span style={{ fontSize: 13, color: '#334155', fontWeight: 600, lineHeight: 1.4 }}>
-                5+ Years Of<br />Experience
+                {s.experience || '3+ Yrs Experience'}
               </span>
             </div>
 
@@ -255,7 +274,7 @@ export default function ServiceDetailScreen({ onNavigate, selectedService, onBac
                 <Star size={20} fill="#D97706" />
               </div>
               <span style={{ fontSize: 13, color: '#334155', fontWeight: 600, lineHeight: 1.4 }}>
-                4.8<br />Rating (1250)
+                {s.rating || '4.9'}<br />Rating ({s.reviewsCount || '150+'})
               </span>
             </div>
           </div>

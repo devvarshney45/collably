@@ -23,11 +23,11 @@ export default function UrgentRequestScreen({ onNavigate, onBack }) {
   };
 
   const handleCall = () => {
-    window.location.href = 'tel:+916397003690';
+    window.location.href = 'tel:+919818191755';
   };
 
   const handleWhatsApp = () => {
-    window.open('https://wa.me/916397003690?text=Hello%20Collably,%20I%20need%20urgent%20assistance.', '_blank');
+    window.open('https://wa.me/919818191755?text=Hello%20Collably,%20I%20need%20urgent%20assistance.', '_blank');
   };
 
   return (

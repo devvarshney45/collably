@@ -1,67 +1,131 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Calendar, CheckCircle2, Star, ArrowLeft } from 'lucide-react';
+import {
+  MapPin,
+  Calendar,
+  Clock,
+  CheckCircle2,
+  AlertCircle,
+  Star,
+  ArrowRight,
+  PhoneCall,
+  RotateCcw,
+  Sparkles
+} from 'lucide-react';
 import { api } from '../api';
 
-export default function BookingsScreen({ onNavigate, onSelectService }) {
+export default function BookingsScreen({ onNavigate, onSelectService, onBookingUpdate }) {
   const [activeBookings, setActiveBookings] = useState([]);
   const [pastBookings, setPastBookings] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     loadBookings();
   }, []);
 
   const loadBookings = async () => {
+    setIsLoading(true);
+    setError(null);
     try {
       const data = await api.bookings.list();
-      setActiveBookings(data.activeBookings || []);
-      setPastBookings(data.pastBookings || []);
+      const active = data.activeBookings || [];
+      const past = data.pastBookings || [];
+      setActiveBookings(active);
+      setPastBookings(past);
+      if (onBookingUpdate) {
+        onBookingUpdate(active.length);
+      }
     } catch (err) {
-      console.warn(err);
-      setActiveBookings([
-        {
-          id: 'COL12345',
-          serviceId: 'srv_corp_lunch',
-          title: 'Corporate Lunch (Executive Thali)',
-          price: '₹200',
-          totalAmount: '₹400',
-          location: 'Gurugram, Cyber City',
-          imageUrl: '/assets/images/daily_meals_hr.jpg',
-          status: 'Confirmed'
-        },
-        {
-          id: 'COL67890',
-          serviceId: 'srv_ac_service',
-          title: 'AC Service (Deep Jet Clean)',
-          price: '₹800',
-          totalAmount: '₹800',
-          location: 'Sector 62, Noida',
-          imageUrl: '/assets/images/ac_service_hr.jpg',
-          status: 'Confirmed'
-        }
-      ]);
-      setPastBookings([
-        {
-          id: 'COL11223',
-          serviceId: 'srv_night_care',
-          title: 'Night Care (Newborn Care)',
-          price: '₹1,350',
-          totalAmount: '₹1,350',
-          location: 'Delhi NCR',
-          date: 'Dec 14, 2024',
-          imageUrl: '/assets/images/night_care_hr.jpg',
-          rating: 5.0
-        }
-      ]);
+      console.warn('[BookingsScreen] Failed to load bookings:', err);
+      setError('Unable to load bookings. Please check your connection.');
+      setActiveBookings([]);
+      setPastBookings([]);
+      if (onBookingUpdate) {
+        onBookingUpdate(0);
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleContact = (b) => {
-    window.open(`https://wa.me/919818191755?text=Hello%20Collably%2C%20regarding%20booking%20${b.id || ''}%20for%20${encodeURIComponent(b.title || '')}`, '_blank');
+    const bookingId = b.id || b.bookingId || '';
+    const title = b.title || b.serviceName || 'Service';
+    window.open(
+      `https://wa.me/919818191755?text=Hello%20Collably%2C%20regarding%20booking%20${bookingId}%20for%20${encodeURIComponent(title)}`,
+      '_blank'
+    );
   };
 
   const handleReschedule = (b) => {
-    onSelectService({ id: b.serviceId, title: b.title, image: b.imageUrl });
+    if (onSelectService) {
+      onSelectService({
+        id: b.serviceId,
+        title: b.title,
+        name: b.title,
+        image: b.imageUrl,
+        iconImage: b.imageUrl,
+        price: b.numericPrice || b.price,
+        category: b.categoryName || 'Daily Meals'
+      });
+    }
     onNavigate('serviceBooking');
+  };
+
+  const renderStatusBadge = (status) => {
+    const s = (status || '').toLowerCase();
+    if (s.includes('pending')) {
+      return (
+        <span style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 4,
+          padding: '4px 10px',
+          borderRadius: 20,
+          backgroundColor: '#FFFBEB',
+          color: '#B45309',
+          border: '1px solid #FDE68A',
+          fontSize: 11,
+          fontWeight: 700
+        }}>
+          <Clock size={12} /> Pending Confirmation
+        </span>
+      );
+    }
+    if (s.includes('complete')) {
+      return (
+        <span style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 4,
+          padding: '4px 10px',
+          borderRadius: 20,
+          backgroundColor: '#EFF6FF',
+          color: '#1D4ED8',
+          border: '1px solid #DBEAFE',
+          fontSize: 11,
+          fontWeight: 700
+        }}>
+          <CheckCircle2 size={12} /> Completed
+        </span>
+      );
+    }
+    return (
+      <span style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 4,
+        padding: '4px 10px',
+        borderRadius: 20,
+        backgroundColor: '#F0FDF4',
+        color: '#15803D',
+        border: '1px solid #BBF7D0',
+        fontSize: 11,
+        fontWeight: 700
+      }}>
+        <CheckCircle2 size={12} /> Confirmed
+      </span>
+    );
   };
 
   return (
@@ -70,189 +134,456 @@ export default function BookingsScreen({ onNavigate, onSelectService }) {
       maxWidth: 960,
       margin: '0 auto',
       animation: 'fadeIn 0.25s ease',
-      boxSizing: 'border-box'
+      boxSizing: 'border-box',
+      padding: '8px 16px 40px'
     }}>
-      {/* Title matching Flutter AppBar */}
-      <h2 style={{ fontSize: 22, fontWeight: 'bold', color: 'black', marginBottom: 20 }}>
-        My Bookings
-      </h2>
-
-      {/* Active Bookings Section */}
-      <div style={{ marginBottom: 32 }}>
-        <h3 style={{ fontSize: 16, fontWeight: 'bold', color: '#1E293B', marginBottom: 16 }}>
-          Active Bookings
-        </h3>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {activeBookings.map((b) => (
-            <div
-              key={b.id}
-              style={{
-                display: 'flex',
-                borderRadius: 16,
-                border: '1px solid #E2E8F0',
-                backgroundColor: '#FFFFFF',
-                overflow: 'hidden',
-                boxShadow: '0 4px 10px rgba(0,0,0,0.02)'
-              }}
-            >
-              <img
-                src={b.imageUrl}
-                alt={b.title}
-                style={{ width: 140, minHeight: 120, objectFit: 'cover', flexShrink: 0 }}
-                onError={(e) => { e.target.src = '/assets/images/elite_photography.png'; }}
-              />
-
-              <div style={{ padding: 14, flex: 1, display: 'flex', flexDirection: 'column' }}>
-                <h4 style={{
-                  fontSize: 13,
-                  fontWeight: 'bold',
-                  color: '#1E293B',
-                  marginBottom: 4,
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis'
-                }}>
-                  {b.title}
-                </h4>
-
-                <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: 13, marginBottom: 6 }}>
-                  {b.price}
-                </span>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'grey', fontSize: 11, fontWeight: 500, marginBottom: 6 }}>
-                  <MapPin size={12} color="grey" />
-                  <span>{b.location}</span>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#27AE60', fontSize: 11, fontWeight: 'bold', marginBottom: 12 }}>
-                  <CheckCircle2 size={13} color="#27AE60" />
-                  <span>Confirmed</span>
-                </div>
-
-                <div style={{ display: 'flex', gap: 8, marginTop: 'auto' }}>
-                  <button
-                    onClick={() => handleContact(b)}
-                    style={{
-                      flex: 1,
-                      padding: '6px 0',
-                      border: '1px solid #CBD5E1',
-                      borderRadius: 6,
-                      background: 'white',
-                      fontSize: 11,
-                      fontWeight: 600,
-                      color: 'rgba(0,0,0,0.87)',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Contact
-                  </button>
-
-                  <button
-                    onClick={() => handleReschedule(b)}
-                    style={{
-                      flex: 1,
-                      padding: '6px 0',
-                      border: '1px solid #CBD5E1',
-                      borderRadius: 6,
-                      background: 'white',
-                      fontSize: 11,
-                      fontWeight: 600,
-                      color: 'rgba(0,0,0,0.87)',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Reschedule
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
+      {/* 1. Header with Refresh */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 24
+      }}>
+        <div>
+          <h1 style={{ fontSize: 24, fontWeight: 800, color: '#0F172A', margin: '0 0 4px' }}>
+            My Bookings
+          </h1>
+          <p style={{ fontSize: 13, color: '#64748B', margin: 0 }}>
+            Track and manage your real-time appointments & service history
+          </p>
         </div>
+
+        <button
+          onClick={loadBookings}
+          disabled={isLoading}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 14px',
+            backgroundColor: '#FFFFFF',
+            border: '1px solid #E2E8F0',
+            borderRadius: 10,
+            fontSize: 12,
+            fontWeight: 700,
+            color: '#475569',
+            cursor: 'pointer',
+            transition: 'all 0.15s'
+          }}
+          onMouseOver={(e) => { e.currentTarget.style.borderColor = 'var(--primary)'; }}
+          onMouseOut={(e) => { e.currentTarget.style.borderColor = '#E2E8F0'; }}
+        >
+          <RotateCcw size={13} className={isLoading ? 'spin' : ''} />
+          <span>Refresh</span>
+        </button>
       </div>
 
-      {/* Past Bookings Section */}
-      <div>
-        <h3 style={{ fontSize: 16, fontWeight: 'bold', color: '#1E293B', marginBottom: 16 }}>
-          Past Bookings
-        </h3>
+      {/* 2. Loading State */}
+      {isLoading && (
+        <div style={{
+          textAlign: 'center',
+          padding: '60px 20px',
+          backgroundColor: '#FFFFFF',
+          borderRadius: 20,
+          border: '1px solid #F1F5F9'
+        }}>
+          <div style={{
+            width: 36,
+            height: 36,
+            border: '3px solid #F1F5F9',
+            borderTopColor: 'var(--primary)',
+            borderRadius: '50%',
+            margin: '0 auto 16px',
+            animation: 'spin 0.8s linear infinite'
+          }} />
+          <p style={{ color: '#64748B', fontSize: 14, fontWeight: 600, margin: 0 }}>
+            Fetching your live bookings from Firestore...
+          </p>
+        </div>
+      )}
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {pastBookings.map((b) => (
-            <div
-              key={b.id}
-              style={{
+      {/* 3. Error Banner */}
+      {!isLoading && error && (
+        <div style={{
+          padding: '16px 20px',
+          borderRadius: 14,
+          backgroundColor: '#FEF2F2',
+          border: '1px solid #FEE2E2',
+          color: '#991B1B',
+          fontSize: 13,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          marginBottom: 20
+        }}>
+          <AlertCircle size={18} />
+          <span>{error}</span>
+          <button
+            onClick={loadBookings}
+            style={{
+              marginLeft: 'auto',
+              background: 'none',
+              border: 'none',
+              color: 'var(--primary)',
+              fontWeight: 700,
+              cursor: 'pointer'
+            }}
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
+      {/* 4. Active Bookings Section */}
+      {!isLoading && (
+        <div style={{ marginBottom: 36 }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: 16
+          }}>
+            <h2 style={{ fontSize: 17, fontWeight: 800, color: '#0F172A', margin: 0 }}>
+              Active Bookings ({activeBookings.length})
+            </h2>
+            {activeBookings.length > 0 && (
+              <span style={{ fontSize: 12, color: '#64748B', fontWeight: 500 }}>
+                Live updates synced with Firestore
+              </span>
+            )}
+          </div>
+
+          {activeBookings.length === 0 ? (
+            /* Senior UI Empty State */
+            <div style={{
+              textAlign: 'center',
+              padding: '48px 24px',
+              backgroundColor: '#FFFFFF',
+              borderRadius: 20,
+              border: '1.5px dashed #E2E8F0',
+              boxShadow: '0 2px 10px rgba(0,0,0,0.02)'
+            }}>
+              <div style={{
+                width: 64,
+                height: 64,
+                borderRadius: '50%',
+                backgroundColor: 'rgba(255, 107, 53, 0.08)',
+                color: 'var(--primary)',
                 display: 'flex',
-                borderRadius: 16,
-                border: '1px solid #E2E8F0',
-                backgroundColor: '#FFFFFF',
-                overflow: 'hidden',
-                boxShadow: '0 4px 10px rgba(0,0,0,0.02)'
-              }}
-            >
-              <img
-                src={b.imageUrl}
-                alt={b.title}
-                style={{ width: 140, minHeight: 120, objectFit: 'cover', flexShrink: 0 }}
-                onError={(e) => { e.target.src = '/assets/images/elite_photography.png'; }}
-              />
-
-              <div style={{ padding: 14, flex: 1, display: 'flex', flexDirection: 'column' }}>
-                <h4 style={{
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 16px'
+              }}>
+                <Calendar size={28} />
+              </div>
+              <h3 style={{ fontSize: 17, fontWeight: 800, color: '#0F172A', margin: '0 0 6px' }}>
+                No Active Bookings
+              </h3>
+              <p style={{
+                fontSize: 13,
+                color: '#64748B',
+                maxWidth: 420,
+                margin: '0 auto 20px',
+                lineHeight: 1.5
+              }}>
+                You do not have any upcoming bookings. Explore our certified services in Delhi NCR and book on-demand in seconds!
+              </p>
+              <button
+                onClick={() => onNavigate('dashboard_home')}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '10px 22px',
+                  backgroundColor: 'var(--primary)',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  borderRadius: 12,
                   fontSize: 13,
-                  fontWeight: 'bold',
-                  color: '#1E293B',
-                  marginBottom: 4,
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis'
-                }}>
-                  {b.title}
-                </h4>
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 14px rgba(255, 107, 53, 0.25)'
+                }}
+              >
+                <span>Explore Services</span>
+                <ArrowRight size={15} />
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {activeBookings.map((b) => (
+                <div
+                  key={b.id}
+                  style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    borderRadius: 18,
+                    border: '1px solid #E2E8F0',
+                    backgroundColor: '#FFFFFF',
+                    overflow: 'hidden',
+                    boxShadow: '0 2px 12px rgba(0,0,0,0.03)',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.borderColor = 'rgba(255, 107, 53, 0.4)';
+                    e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,0,0,0.06)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.borderColor = '#E2E8F0';
+                    e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.03)';
+                  }}
+                >
+                  {/* Thumbnail */}
+                  <div style={{
+                    width: 160,
+                    minHeight: 140,
+                    position: 'relative',
+                    backgroundColor: '#F8FAFC',
+                    flexShrink: 0
+                  }}>
+                    <img
+                      src={b.imageUrl}
+                      alt={b.title}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        display: 'block'
+                      }}
+                      onError={(e) => {
+                        e.target.src = '/assets/images/daily_meals_hr.jpg';
+                      }}
+                    />
+                    <div style={{
+                      position: 'absolute',
+                      top: 8,
+                      left: 8,
+                      backgroundColor: 'rgba(15, 23, 42, 0.75)',
+                      color: '#FFFFFF',
+                      fontSize: 10,
+                      fontWeight: 700,
+                      padding: '2px 6px',
+                      borderRadius: 6
+                    }}>
+                      #{String(b.id).slice(-6).toUpperCase()}
+                    </div>
+                  </div>
 
-                <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: 13, marginBottom: 6 }}>
-                  {b.price}
-                </span>
+                  {/* Body Content */}
+                  <div style={{
+                    padding: '16px 20px',
+                    flex: 1,
+                    minWidth: 260,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between'
+                  }}>
+                    <div>
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        justifyContent: 'space-between',
+                        gap: 12,
+                        marginBottom: 6
+                      }}>
+                        <h3 style={{
+                          fontSize: 16,
+                          fontWeight: 800,
+                          color: '#0F172A',
+                          margin: 0
+                        }}>
+                          {b.title}
+                        </h3>
+                        {renderStatusBadge(b.status)}
+                      </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'grey', fontSize: 11, fontWeight: 500, marginBottom: 4 }}>
-                  <MapPin size={12} color="grey" />
-                  <span>{b.location}</span>
-                </div>
+                      {/* Price & Category */}
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 10,
+                        marginBottom: 10
+                      }}>
+                        <span style={{
+                          color: 'var(--primary)',
+                          fontWeight: 800,
+                          fontSize: 16
+                        }}>
+                          {b.price}
+                        </span>
+                        {b.categoryName && (
+                          <span style={{
+                            fontSize: 11,
+                            color: '#64748B',
+                            backgroundColor: '#F1F5F9',
+                            padding: '2px 8px',
+                            borderRadius: 6,
+                            fontWeight: 600
+                          }}>
+                            {b.categoryName}
+                          </span>
+                        )}
+                      </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'grey', fontSize: 11, fontWeight: 600, marginBottom: 12 }}>
-                  <Calendar size={12} color="grey" />
-                  <span>{b.date || 'Dec 14, 2024'}</span>
-                </div>
+                      {/* Meta Information: Date, Time, Location */}
+                      <div style={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: 16,
+                        color: '#64748B',
+                        fontSize: 12,
+                        fontWeight: 500,
+                        marginBottom: 14
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                          <Calendar size={13} color="var(--primary)" />
+                          <span>{b.date || 'Today'}</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                          <Clock size={13} color="var(--primary)" />
+                          <span>{b.time || '11:00 AM'}</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                          <MapPin size={13} color="#64748B" />
+                          <span>{b.location || 'Noida / Gurugram'}</span>
+                        </div>
+                      </div>
+                    </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 'auto' }}>
-                  <button
-                    onClick={() => handleReschedule(b)}
-                    style={{
-                      padding: '6px 16px',
-                      backgroundColor: 'var(--primary)',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: 6,
-                      fontSize: 11,
-                      fontWeight: 'bold',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Reschedule
-                  </button>
+                    {/* Action Buttons */}
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                      paddingTop: 12,
+                      borderTop: '1px solid #F1F5F9'
+                    }}>
+                      <button
+                        onClick={() => handleContact(b)}
+                        style={{
+                          flex: 1,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 6,
+                          padding: '8px 14px',
+                          border: '1.5px solid #E2E8F0',
+                          borderRadius: 10,
+                          backgroundColor: '#FFFFFF',
+                          color: '#1E293B',
+                          fontSize: 12,
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          transition: 'all 0.15s'
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.borderColor = '#25D366';
+                          e.currentTarget.style.color = '#25D366';
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.borderColor = '#E2E8F0';
+                          e.currentTarget.style.color = '#1E293B';
+                        }}
+                      >
+                        <PhoneCall size={13} />
+                        <span>Support & Contact</span>
+                      </button>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                    <Star size={14} fill="#F59E0B" color="#F59E0B" />
-                    <span style={{ fontSize: 11, color: 'rgba(0,0,0,0.54)', fontWeight: 'bold' }}>
-                      Rated {b.rating || '5.0'}
-                    </span>
+                      <button
+                        onClick={() => handleReschedule(b)}
+                        style={{
+                          flex: 1,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 6,
+                          padding: '8px 14px',
+                          border: 'none',
+                          borderRadius: 10,
+                          backgroundColor: 'var(--primary)',
+                          color: '#FFFFFF',
+                          fontSize: 12,
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          transition: 'all 0.15s'
+                        }}
+                      >
+                        <span>Reschedule</span>
+                        <ArrowRight size={13} />
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
+              ))}
             </div>
-          ))}
+          )}
         </div>
-      </div>
+      )}
+
+      {/* 5. Past Bookings Section */}
+      {!isLoading && pastBookings.length > 0 && (
+        <div>
+          <h2 style={{ fontSize: 17, fontWeight: 800, color: '#0F172A', marginBottom: 16 }}>
+            Past Bookings ({pastBookings.length})
+          </h2>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {pastBookings.map((b) => (
+              <div
+                key={b.id}
+                style={{
+                  display: 'flex',
+                  borderRadius: 16,
+                  border: '1px solid #E2E8F0',
+                  backgroundColor: '#FFFFFF',
+                  overflow: 'hidden',
+                  opacity: 0.95
+                }}
+              >
+                <img
+                  src={b.imageUrl}
+                  alt={b.title}
+                  style={{ width: 120, objectFit: 'cover' }}
+                  onError={(e) => { e.target.src = '/assets/images/daily_meals_hr.jpg'; }}
+                />
+
+                <div style={{ padding: '14px 18px', flex: 1 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <h4 style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', margin: 0 }}>
+                      {b.title}
+                    </h4>
+                    <span style={{ fontSize: 12, color: 'var(--primary)', fontWeight: 700 }}>
+                      {b.price}
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 14, color: '#64748B', fontSize: 11, marginBottom: 10 }}>
+                    <span>{b.date || 'Completed'}</span>
+                    <span>•</span>
+                    <span>{b.location}</span>
+                  </div>
+
+                  <button
+                    onClick={() => handleReschedule(b)}
+                    style={{
+                      padding: '6px 14px',
+                      backgroundColor: '#F8FAFC',
+                      border: '1px solid #E2E8F0',
+                      borderRadius: 8,
+                      color: 'var(--primary)',
+                      fontSize: 11,
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Book Again
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

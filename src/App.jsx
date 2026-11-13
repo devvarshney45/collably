@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { api } from './api';
 import SplashScreen from './screens/SplashScreen';
 import OnboardingScreen from './screens/OnboardingScreen';
 import LoginScreen from './screens/LoginScreen';
@@ -31,8 +32,24 @@ export default function App() {
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [searchCategory, setSearchCategory] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(true);
-  const [cartCount, setCartCount] = useState(2);
+  const [cartCount, setCartCount] = useState(0);
+  const [bookingsCount, setBookingsCount] = useState(0);
   const [toast, setToast] = useState('');
+
+  useEffect(() => {
+    refreshBookingsCount();
+  }, []);
+
+  const refreshBookingsCount = async () => {
+    try {
+      const data = await api.bookings.list();
+      if (data && Array.isArray(data.activeBookings)) {
+        setBookingsCount(data.activeBookings.length);
+      }
+    } catch (err) {
+      console.warn('[App] Could not fetch active bookings count:', err);
+    }
+  };
 
   const showToast = (msg) => {
     setToast(msg);
@@ -175,6 +192,7 @@ export default function App() {
               <BookingsScreen
                 onNavigate={navigateTo}
                 onSelectService={setSelectedService}
+                onBookingUpdate={setBookingsCount}
               />
             )}
             {dashboardTab === 'requests' && (
@@ -184,12 +202,6 @@ export default function App() {
               <ProfileScreen
                 onNavigate={navigateTo}
                 onLogout={handleLogout}
-              />
-            )}
-            {dashboardTab === 'shopping' && (
-              <ShoppingScreen
-                onNavigate={navigateTo}
-                onBack={() => setDashboardTab('home')}
               />
             )}
           </div>
@@ -229,6 +241,7 @@ export default function App() {
             onNavigate={navigateTo}
             selectedService={selectedService}
             onBack={handleBack}
+            onBookingSuccess={refreshBookingsCount}
           />
         );
 
@@ -317,6 +330,7 @@ export default function App() {
         screenList={screenList}
         activeAddress={selectedAddress ? (selectedAddress.title ? `${selectedAddress.title} • ${selectedAddress.subtitle || selectedAddress.fullAddress}` : selectedAddress.fullAddress) : 'Home • Ghaziabad, Uttar Pradesh'}
         cartCount={cartCount}
+        bookingsCount={bookingsCount}
         isLoggedIn={isLoggedIn}
         onLogout={handleLogout}
       />

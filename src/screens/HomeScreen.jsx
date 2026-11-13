@@ -62,12 +62,12 @@ export default function HomeScreen({ onNavigate, onSelectService }) {
     ? services
     : services.filter(s => (s.category || '').toLowerCase() === selectedFilter.toLowerCase());
 
-  // 4 Primary categories matching the mobile app with High-Definition 600x600 assets
+  // 4 Primary categories matching the mobile app with High-Definition assets from live database
   const appCategories = [
     {
       id: 'daily_meals',
       title: 'Daily Meals',
-      image: '/assets/images/daily_meals_hr.jpg',
+      image: categories.find(c => (c.name || '').toLowerCase() === 'daily meals')?.iconImage || '/assets/images/daily_meals_hr.jpg',
       bgColor: '#FFFBEB',
       borderColor: '#FDE68A',
       badge: 'Best Food',
@@ -77,7 +77,7 @@ export default function HomeScreen({ onNavigate, onSelectService }) {
     {
       id: 'appliance_repair',
       title: 'Appliance Repair',
-      image: '/assets/images/appliance_repair_hr.jpg',
+      image: categories.find(c => (c.name || '').toLowerCase() === 'appliance repair')?.iconImage || '/assets/images/appliance_repair_hr.jpg',
       bgColor: '#FFF7ED',
       borderColor: '#FFEDD5',
       badge: 'Certified Techs',
@@ -87,7 +87,7 @@ export default function HomeScreen({ onNavigate, onSelectService }) {
     {
       id: 'office_support',
       title: 'Office Support',
-      image: '/assets/images/office_support_hr.jpg',
+      image: categories.find(c => (c.name || '').toLowerCase() === 'office support')?.iconImage || '/assets/images/office_support_hr.jpg',
       bgColor: '#EFF6FF',
       borderColor: '#DBEAFE',
       badge: 'Corporate',
@@ -97,7 +97,7 @@ export default function HomeScreen({ onNavigate, onSelectService }) {
     {
       id: 'babysitting',
       title: 'Babysitting',
-      image: '/assets/images/babysitting_hr.jpg',
+      image: categories.find(c => (c.name || '').toLowerCase() === 'babysitting')?.iconImage || '/assets/images/babysitting_hr.jpg',
       bgColor: '#FEF2F2',
       borderColor: '#FEE2E2',
       badge: 'Trained Care',

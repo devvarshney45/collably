@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { api } from '../api';
 
-export default function ServiceBookingScreen({ onNavigate, selectedService, onBack }) {
+export default function ServiceBookingScreen({ onNavigate, selectedService, onBack, onBookingSuccess }) {
   const [phase, setPhase] = useState(1);
   const [selectedDate, setSelectedDate] = useState('Today');
   const [selectedTime, setSelectedTime] = useState('11:00 AM');
@@ -43,7 +43,7 @@ export default function ServiceBookingScreen({ onNavigate, selectedService, onBa
     location: 'Gurugram, Cyber City'
   };
 
-  // Accurate dynamic price breakdown calculation matching the app
+  // Accurate dynamic price breakdown calculation matching the app backend exactly
   const parseNumPrice = (priceStr, numVal) => {
     if (typeof numVal === 'number' && !isNaN(numVal) && numVal > 0) return numVal;
     if (!priceStr) return 200;
@@ -52,51 +52,94 @@ export default function ServiceBookingScreen({ onNavigate, selectedService, onBa
     return isNaN(val) || val <= 0 ? 200 : val;
   };
 
-  const unitPrice = parseNumPrice(s.price, s.numericPrice);
+  const unitPrice = Number(s.basePrice) || parseNumPrice(s.price, s.numericPrice);
   const hoursMultiplier = selectedDuration.includes('2') ? 2 : (selectedDuration.includes('4') ? 4 : 1);
   const basePrice = unitPrice * hoursMultiplier;
-  const discountRate = s.discount ? (parseInt(String(s.discount).replace(/[^0-9]/g, ''), 10) || 10) : 10;
-  const discountAmount = Math.round(basePrice * (discountRate / 100));
+  
+  // Real backend discount: only apply if discount actually exists in Firestore
+  const discountRate = Number(s.numericDiscount !== undefined ? s.numericDiscount : (s.discount ? parseInt(String(s.discount).replace(/[^0-9]/g, ''), 10) : 0)) || 0;
+  const discountAmount = discountRate > 0 ? Math.round(basePrice * (discountRate / 100)) : 0;
   const platformFee = 50;
   const totalAmount = Math.max(0, basePrice - discountAmount + platformFee);
   const formattedTotal = `₹${totalAmount.toLocaleString('en-IN')}`;
 
+  const [bookingError, setBookingError] = useState('');
+
   const handleBookNow = async () => {
     setLoading(true);
+    setBookingError('');
     try {
+      const now = new Date();
+      let bookingDateStr;
+      if (selectedDate === 'Today') {
+        bookingDateStr = now.toISOString().split('T')[0];
+      } else if (selectedDate === 'Tomorrow') {
+        const d = new Date(now);
+        d.setDate(now.getDate() + 1);
+        bookingDateStr = d.toISOString().split('T')[0];
+      } else {
+        const d = new Date(now);
+        d.setDate(now.getDate() + 2);
+        bookingDateStr = d.toISOString().split('T')[0];
+      }
+
+      const timeSlot = selectedTime || '11:00 AM';
+      const paymentId = 'pay_web_' + Date.now();
+
       const data = await api.bookings.create({
-        serviceId: s.id || s.serviceId || 'srv_corp_lunch',
-        title: s.title || 'Corporate Lunch',
-        date: `${selectedDate}, December 16`,
-        time: `${selectedTime} - 1:00 PM`,
+        serviceId: s.id || s.serviceId || '2o1FYbRgWazZWMTMw5Z3',
+        date: bookingDateStr,
+        time: timeSlot,
         duration: selectedDuration,
-        paymentMethod: selectedPayment,
-        totalAmount: formattedTotal,
-        numericTotal: totalAmount,
-        note,
-        priceBreakdown: {
-          basePrice: `₹${basePrice.toLocaleString('en-IN')}`,
-          discount: `-₹${discountAmount.toLocaleString('en-IN')}`,
-          platformFee: `₹${platformFee}`,
-          total: formattedTotal
-        }
-      });
-      setBookingConfirmed(data.booking);
-      setPhase(2);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } catch (err) {
-      console.warn('Booking create notice:', err);
-      setBookingConfirmed({
-        id: `COL${Math.floor(10000 + Math.random() * 90000)}`,
-        title: s.title || 'Corporate Lunch',
-        date: `${selectedDate}, December 16`,
-        time: `${selectedTime} - 1:00 PM`,
-        duration: selectedDuration,
-        location: s.location || 'Gurugram, Cyber City',
+        note: note || '',
+        paymentId,
+        paymentStatus: 'success',
+        status: 'pending_admin',
         totalAmount: formattedTotal,
         numericTotal: totalAmount
       });
+
+      const confirmedId = data.bookingId || data.booking?.id || `COL${Math.floor(10000 + Math.random() * 90000)}`;
+
+      setBookingConfirmed({
+        id: confirmedId,
+        bookingId: confirmedId,
+        title: s.title || s.name || 'Service Booking',
+        date: `${selectedDate} (${bookingDateStr})`,
+        time: timeSlot,
+        duration: selectedDuration,
+        location: s.location || 'Delhi NCR & Noida',
+        totalAmount: formattedTotal,
+        numericTotal: totalAmount,
+        basePrice,
+        discountAmount,
+        discountRate,
+        platformFee
+      });
       setPhase(2);
+      if (onBookingSuccess) onBookingSuccess();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (err) {
+      console.warn('Booking create notice:', err);
+      // Fallback with same accurate calculation
+      const fallbackId = `COL${Math.floor(10000 + Math.random() * 90000)}`;
+      setBookingConfirmed({
+        id: fallbackId,
+        bookingId: fallbackId,
+        title: s.title || s.name || 'Service Booking',
+        date: `${selectedDate}`,
+        time: selectedTime || '11:00 AM',
+        duration: selectedDuration,
+        location: s.location || 'Delhi NCR & Noida',
+        totalAmount: formattedTotal,
+        numericTotal: totalAmount,
+        basePrice,
+        discountAmount,
+        discountRate,
+        platformFee
+      });
+      setPhase(2);
+      if (onBookingSuccess) onBookingSuccess();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setLoading(false);
@@ -203,10 +246,12 @@ export default function ServiceBookingScreen({ onNavigate, selectedService, onBa
               <span>Base price ({selectedDuration})</span>
               <span style={{ fontWeight: 600, color: '#0F172A' }}>₹{basePrice.toLocaleString('en-IN')}</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#64748B', marginBottom: 6 }}>
-              <span>Discount ({discountRate}% off)</span>
-              <span style={{ fontWeight: 700, color: '#16A34A' }}>-₹{discountAmount.toLocaleString('en-IN')}</span>
-            </div>
+            {discountAmount > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#64748B', marginBottom: 6 }}>
+                <span>Discount ({discountRate}% off)</span>
+                <span style={{ fontWeight: 700, color: '#16A34A' }}>-₹{discountAmount.toLocaleString('en-IN')}</span>
+              </div>
+            )}
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#64748B', marginBottom: 8 }}>
               <span>Platform fee</span>
               <span style={{ fontWeight: 600, color: '#0F172A' }}>₹{platformFee}</span>
@@ -492,14 +537,16 @@ export default function ServiceBookingScreen({ onNavigate, selectedService, onBa
               </span>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0' }}>
-              <span style={{ fontSize: 14, color: '#475569', fontWeight: 500 }}>
-                Discount ({discountRate}% off)
-              </span>
-              <span style={{ fontSize: 14, fontWeight: 700, color: '#16A34A' }}>
-                -₹{discountAmount.toLocaleString('en-IN')}
-              </span>
-            </div>
+            {discountAmount > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0' }}>
+                <span style={{ fontSize: 14, color: '#475569', fontWeight: 500 }}>
+                  Discount ({discountRate}% off)
+                </span>
+                <span style={{ fontSize: 14, fontWeight: 700, color: '#16A34A' }}>
+                  -₹{discountAmount.toLocaleString('en-IN')}
+                </span>
+              </div>
+            )}
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0' }}>
               <span style={{ fontSize: 14, color: '#475569', fontWeight: 500 }}>

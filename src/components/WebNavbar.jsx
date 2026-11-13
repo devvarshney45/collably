@@ -22,6 +22,7 @@ export default function WebNavbar({
   screenList = [],
   activeAddress,
   cartCount = 0,
+  bookingsCount = 0,
   isLoggedIn,
   onLogout
 }) {
@@ -30,7 +31,7 @@ export default function WebNavbar({
 
   const navLinks = [
     { id: 'dashboard_home', tab: 'home', label: 'Home', icon: Home },
-    { id: 'dashboard_bookings', tab: 'bookings', label: 'Bookings', icon: Calendar, badge: 2 },
+    { id: 'dashboard_bookings', tab: 'bookings', label: 'Bookings', icon: Calendar, badge: bookingsCount > 0 ? bookingsCount : null },
     { id: 'dashboard_requests', tab: 'requests', label: 'Requests', icon: ClipboardList },
     { id: 'wallet', tab: 'wallet', label: 'Wallet', icon: Wallet },
   ];

@@ -64,7 +64,7 @@ export default function WebFooter({ onNavigate }) {
             </div>
             <div className="web-footer-contact-item">
               <MapPin size={14} color="var(--primary)" />
-              <span>1685 Lake Forest, New York & Koramangala, Bangalore</span>
+              <span>Sector 62, Noida & Cyber City, Gurugram, Delhi NCR</span>
             </div>
           </div>
         </div>
